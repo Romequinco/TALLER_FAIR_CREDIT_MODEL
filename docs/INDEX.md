@@ -31,3 +31,8 @@ Síntesis por **tarea del taller** (no por tema del profe), en [`teoria/`](teori
 | 3 — Keras Tuner (topología) | [03-keras-tuner.md](teoria/03-keras-tuner.md) |
 | 4 — Incertidumbre (clase + varianza) | [04-incertidumbre.md](teoria/04-incertidumbre.md) |
 | — Contexto "redes confiables" (no es tarea) | [05-contexto-confiabilidad.md](teoria/05-contexto-confiabilidad.md) |
+
+## Decisiones de diseño
+
+Registro único de decisiones del grupo (qué se elige en cada hueco abierto y por qué),
+consolidando los huecos de `teoria/` y los hallazgos del EDA: [`DECISIONES.md`](DECISIONES.md).
