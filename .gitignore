@@ -216,3 +216,22 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ---- Proyecto Taller B4-T1 ----
+# Datasets y modelos pesados (Home Credit Default Risk + checkpoints Keras)
+data/
+*.csv
+*.h5
+*.keras
+
+# Artefactos de búsqueda de hiperparámetros (Keras Tuner)
+untitled_project/
+*_tuner/
+keras_tuner_dir/
+tuner_results/
+
+# Material de estudio del profesor y de clase (protección de datos):
+# NO versionar nada de docs/_fuentes/ (clases-master/, profe-lectures/,
+# _extracted/, INVENTARIO.md). Se conserva solo en local. Sí se versiona
+# nuestra propia síntesis en docs/teoria/.
+docs/_fuentes/
