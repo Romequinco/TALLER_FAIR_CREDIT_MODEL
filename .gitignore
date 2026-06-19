@@ -219,7 +219,13 @@ __marimo__/
 
 # ---- Proyecto Taller B4-T1 ----
 # Datasets y modelos pesados (Home Credit Default Risk + checkpoints Keras)
-data/
+# data/ se ignora entera (el CSV de Kaggle nunca se sube) SALVO su
+# documentación versionada (README + .gitkeep). Con data/* en vez de data/
+# las excepciones !data/... funcionan (no se puede re-incluir un fichero si
+# su carpeta padre está excluida con data/).
+data/*
+!data/README.md
+!data/.gitkeep
 *.csv
 *.h5
 *.keras
