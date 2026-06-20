@@ -375,6 +375,94 @@ Decisiones derivadas sobre todo del [EDA]; sin sección propia en teoría, pero 
 
 ---
 
+## Modelo base (NB 03)
+
+Decisiones que fija el notebook [`03_modelo_base.ipynb`](../notebooks/03_modelo_base.ipynb): el
+modelo de **referencia sin FAIR ni capa custom** (`λ = 0`) que sirve de línea base del
+"base vs mejor FAIR" (entregable E5). Consume el contrato `(X, y, s)` y las decisiones de
+preprocesado de `02_preprocesado` (D-P.*) **sin rediscutirlas**. Artefactos que produce:
+`results/figures/03_base__curva_loss.png` (E4), `results/figures/03_base__roc_test.png` (opcional)
+y `results/tables/03_base__metricas_test.csv` (parte base de E5).
+
+### D-MB.1 · Arquitectura del MLP base
+- **Decisión:** qué red es el modelo de referencia, sin capa custom (Tarea 1) ni FAIR loss (Tarea 2).
+- **Opciones:** (a) modelo lineal / regresión logística como base mínima; (b) **MLP pequeño**
+  `Dense(64) → Dense(32)` con dropout intermedio; (c) red más profunda/ancha.
+- **Propuesta:** **MLP `Sequential`: `Dense(64, relu) → Dropout(0.3) → Dense(32, relu) → Dropout(0.3) →
+  Dense(1, sigmoid)`**, sin capa custom y con **`λ_fair = 0`**. Es la **referencia ingenua mínima pero
+  realista** (no un lineal de juguete) sobre la que medir lo que aportan las Tareas 1-4. El **dropout 0,3
+  se monta FIJO** aunque aquí no se optimice: deja la **cadena 06→07** lista — el tuner de la Tarea 3
+  (D-3.2) buscará la *tasa* de dropout y la Tarea 4 (D-4.1) reutiliza ese mismo dropout como motor de
+  **MC-Dropout**. Sin él, el base no sería comparable arquitectónicamente con los modelos posteriores.
+- **Decisión del grupo (2026-06-20):** arquitectura `64→32` ReLU con `Dropout(0.3)` entre densas y salida
+  sigmoide, fijada como base común; el dropout queda montado de serie por la dependencia D-3.2 ↔ D-4.1.
+- **Estado:** **Confirmada**
+- **Decidido por / fecha:** Grupo / 2026-06-20
+
+### D-MB.2 · Compilación (loss, optimizador, métrica)
+- **Decisión:** con qué se compila el modelo base.
+- **Opciones:** loss `binary_crossentropy` vs focal; optimizador Adam vs SGD; métrica de seguimiento
+  AUC vs accuracy.
+- **Propuesta:** **`loss = binary_crossentropy`, `optimizer = Adam`, métrica `AUC`**. La **AUC** se elige
+  como métrica de seguimiento por su robustez al fuerte desbalance que mide el [EDA] (**8,07 % de impagos,
+  ratio 11,4:1**), donde la accuracy engaña (un trivial "siempre paga" acierta el 91,93 %). Es coherente
+  con **D-2.4**, que ya fija AUC-ROC como eje de precisión de la curva de Pareto: el base y las tareas se
+  miden con la misma vara.
+- **Decisión del grupo (2026-06-20):** BCE + Adam + métrica AUC como compilación estándar del base,
+  alineada con D-2.4.
+- **Estado:** **Confirmada**
+- **Decidido por / fecha:** Grupo / 2026-06-20
+
+### D-MB.3 · Tratamiento del desbalance en el base
+- **Decisión:** cómo compensar el 8,07 % de impago al entrenar el modelo base.
+- **Opciones:** (a) **`class_weight` balanced**; (b) oversampling / SMOTE; (c) undersampling; (d) no hacer nada.
+- **Propuesta:** **`class_weight` "balanced" calculado desde la proporción de train** (clase 1 ≈ **6,19**,
+  clase 0 ≈ **0,544**). No se hace oversampling ni undersampling: el reponderado **no altera la distribución
+  real** de los datos ni infla el tamaño del train, es determinista y barato, y basta para que la red no
+  colapse en la clase mayoritaria con el desbalance que mide el [EDA] (**ratio 11,4:1**). Los pesos se derivan
+  **solo de la proporción de train** (coherente con el anti-fuga de D-P.6).
+- **Decisión del grupo (2026-06-20):** reponderado por `class_weight` balanced desde train; se descarta el
+  resampling para el base por mantener la distribución original.
+- **Estado:** **Confirmada**
+- **Decidido por / fecha:** Grupo / 2026-06-20
+
+### D-MB.4 · Entrenamiento, parada y umbral
+- **Decisión:** protocolo de entrenamiento, parada y corte de clasificación del base.
+- **Opciones:** parada por **nº fijo de épocas** vs **EarlyStopping**; gestión del *learning rate* fijo vs
+  **`ReduceLROnPlateau`**; conservar los pesos de la última época vs los del **mejor `val_auc`**
+  (`ModelCheckpoint`); monitorizar `val_loss` vs `val_auc`; umbral 0,5 fijo vs ajustado por coste.
+- **Propuesta:** **validar sobre el split `val` (D-P.6)**, entrenar un **nº fijo de épocas (150)** —sin
+  EarlyStopping, dejando que el `fit` complete las 150— y gobernar la convergencia con
+  **`ReduceLROnPlateau(monitor="val_auc", factor=0.5, patience=8, min_lr=1e-6)`** (baja el LR cuando el AUC se
+  estanca) más **`ModelCheckpoint(monitor="val_auc", save_best_only=True)`**, recargando al final los pesos del
+  **mejor `val_auc`** (no los de la época 150) para no arrastrar un eventual sobreajuste del tramo final.
+  Umbral **0,5 provisional** para las métricas de test; se reporta **AUC-ROC (principal)** y
+  **accuracy (secundaria)**. El umbral 0,5 es deliberadamente **provisional**: el ajuste por coste de falso
+  negativo es una **decisión de política** que se difiere a **D-4.4** (Tarea 4), no al base. Usar el split `val`
+  (y no el test) para monitorizar la parada/LR deja el test reservado a la evaluación final imparcial, como
+  fija D-P.6.
+- **Decisión del grupo (2026-06-20):** 150 épocas fijas (sin EarlyStopping) + `ReduceLROnPlateau` sobre
+  `val_auc` + `ModelCheckpoint` que conserva los mejores pesos por `val_auc` (recargados al terminar);
+  evaluación en test con umbral 0,5 provisional; el umbral por coste se decide en D-4.4.
+- **Estado:** **Confirmada**
+- **Decidido por / fecha:** Grupo / 2026-06-20
+
+### D-MB.5 · Auditoría de equidad del modelo base
+- **Decisión:** si el base —que no lleva FAIR— audita su propia equidad y con qué métrica.
+- **Opciones:** (a) no auditar (es "solo" la base); (b) **reportar group gap M−F + tasas por grupo**;
+  (c) métricas de dependencia (HSIC/CKA) residuales.
+- **Propuesta:** **reportar el group gap `Δ = mean(ŷ|M) − mean(ŷ|F)` + las tasas por grupo** ya en el base,
+  contrastándolo con la **línea base del [EDA] (+3,14 pp**, M 10,14 % vs F 7,00 % de impago real). El **género
+  NUNCA es input**: el gap mide el sesgo que se filtra por las variables predictivas (el [EDA] muestra que se
+  cuela vía `EXT_SOURCE_1`). Esta cifra es la **cota a batir por la FAIR loss** y da sentido al "base vs mejor
+  FAIR" (E5); es la misma métrica de equidad que fija **D-2.3**.
+- **Decisión del grupo (2026-06-20):** auditar el base con group gap M−F + tasas por grupo (métrica de D-2.3),
+  sin usar el género como entrada, para fijar la referencia de equidad.
+- **Estado:** **Confirmada**
+- **Decidido por / fecha:** Grupo / 2026-06-20
+
+---
+
 ## Resumen de estados
 
 | Sección | Fichas | Propuesta | Confirmada | Revisar | Abierta |
@@ -384,9 +472,16 @@ Decisiones derivadas sobre todo del [EDA]; sin sección propia en teoría, pero 
 | Tarea 3 — Keras Tuner | 4 | 4 | 0 | 0 | 0 |
 | Tarea 4 — Incertidumbre | 5 | 3 | 0 | 0 | 2 (D-4.2, D-4.4) |
 | Preprocesado | 7 | 0 | 7 | 0 | 0 |
-| **Total** | **29** | **19** | **7** | **0** | **3** |
+| Modelo base (NB 03) | 5 | 0 | 5 | 0 | 0 |
+| **Total** | **34** | **19** | **12** | **0** | **3** |
 
 **Preprocesado validado por el grupo:** las **7** fichas (D-P.1 a D-P.7) están **Confirmadas**; ya no queda
 ninguna en **Revisar**. D-P.2 quedó **Confirmada (2026-06-20)** tras el experimento de AUC en validación, que
 dio ganadora a la **mediana** (AUC val = 0,728034); el resto (D-P.1, D-P.3, D-P.4, D-P.5, D-P.6, D-P.7) se
-confirmaron el 2026-06-19. Las decisiones de las Tareas 1-4 siguen pendientes de validación.
+confirmaron el 2026-06-19.
+
+**Modelo base confirmado (2026-06-20):** las **5** fichas (D-MB.1 a D-MB.5) están **Confirmadas**: fijan la
+arquitectura `64→32` ReLU con `Dropout(0.3)` (sin capa custom ni FAIR), la compilación BCE + Adam + AUC, el
+`class_weight` balanced, la parada por `val_auc` con umbral 0,5 provisional y la auditoría de equidad por group
+gap. Registran **decisiones de diseño**, no resultados numéricos (AUC/gap reales se rellenarán tras ejecutar el
+notebook). Las decisiones de las Tareas 1-4 siguen pendientes de validación.

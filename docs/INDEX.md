@@ -32,6 +32,31 @@ Síntesis por **tarea del taller** (no por tema del profe), en [`teoria/`](teori
 | 4 — Incertidumbre (clase + varianza) | [04-incertidumbre.md](teoria/04-incertidumbre.md) |
 | — Contexto "redes confiables" (no es tarea) | [05-contexto-confiabilidad.md](teoria/05-contexto-confiabilidad.md) |
 
+## Notebooks (flujo de trabajo)
+
+Pipeline correlativo en [`notebooks/`](../notebooks/): del diagnóstico al modelado de las 4 tareas.
+El contrato de datos `(X, y, s)` y las decisiones de preprocesado (`D-P.*`) quedan cerrados en
+`02_preprocesado` y se **consumen** (no se rediscuten) en los notebooks de modelado.
+
+| Notebook | Cubre | Estado |
+| -------- | ----- | ------ |
+| `01_EDA.ipynb` | EDA avanzado orientado a las 4 tareas | ✅ completo |
+| `02_preprocesado.ipynb` | Pipeline sin fuga, contrato `(X, y, s)`, decisiones `D-P.1`–`D-P.7` | ✅ completo |
+| `03_modelo_base.ipynb` | Modelo base sin FAIR (referencia "base vs mejor FAIR", E5; decisiones `D-MB.1`–`D-MB.5`) | ✅ completo |
+| `04_tarea1_capa_custom.ipynb` | **Tarea 1** — capa custom del ratio de endeudamiento (`D-1.x`) | 🟡 esqueleto |
+| `05_tarea2_fair_loss.ipynb` | **Tarea 2** — FAIR loss; produce la tabla E5 (`D-2.x`) | 🟡 esqueleto |
+| `06_tarea3_keras_tuner.ipynb` | **Tarea 3** — AutoML / Keras Tuner; produce la Pareto E2 (`D-3.x`) | 🟡 esqueleto |
+| `07_tarea4_incertidumbre.ipynb` | **Tarea 4** — clase + varianza; produce E3 (`D-4.x`) | 🟡 esqueleto |
+
+> 🟡 **esqueleto** = estructura, imports y carga de datos montados y verificados (ejecutan
+> limpio); falta implementar la lógica de modelos. Las convenciones comunes que todos respetan
+> (carga `(X, y, s)`, rutas de `results/`, formato del bloque de decisiones, paleta y mapa de
+> entregables E1–E5) están en [`CONVENCIONES_MODELADO.md`](CONVENCIONES_MODELADO.md).
+>
+> Dependencias clave: **03** (base) alimenta la tabla E5 de **05** y la comparación de **06**/**07**;
+> el **dropout** del espacio de búsqueda de **06** (`D-3.2`) es la palanca que **07** reutiliza para
+> MC-Dropout (`D-4.1`).
+
 ## Decisiones de diseño
 
 Registro único de decisiones del grupo (qué se elige en cada hueco abierto y por qué),
