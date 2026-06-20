@@ -297,10 +297,17 @@ Decisiones derivadas sobre todo del [EDA]; sin sección propia en teoría, pero 
   La imputación arranca con **mediana por defecto**, pero el **pipeline queda parametrizado** para enchufar
   una imputación alternativa (KNN o regresor) sin reescribir el código. La elección final (mediana vs
   alternativa) **se decidirá midiendo AUC en validación**, con cada imputador **ajustado solo en train**.
-  Por eso queda en **Revisar**: el método base está fijado, pero la elección definitiva está pendiente de
-  esa comparación empírica.
-- **Estado:** **Revisar**
-- **Decidido por / fecha:** Grupo / 2026-06-19
+- **Cierre experimental (2026-06-20):** se comparó **mediana vs KNN vs IterativeImputer** con un **proxy
+  neutro (`LogisticRegression`)** midiendo **AUC-ROC en validación**, con cada imputador **ajustado solo en
+  train** (anti-fuga, D-P.6). Resultado: **gana la mediana** con **AUC val = 0,728034**. El `IterativeImputer`
+  (BayesianRidge) queda en **empate técnico** (ΔAUC = **−0,000168**, dentro del ruido) y `KNNImputer(k=5)` es
+  **claramente peor** (AUC val = 0,724801, ΔAUC = **−0,0032**) y además **~300× más caro** (≈ 389 s vs ≈ 1 s).
+  Ninguna alternativa supera a la mediana de forma clara y material → **se mantiene `SimpleImputer(strategy="median")`
+  como imputación definitiva** por ser la más simple, barata y determinista sin pérdida de AUC. Los flags
+  `*_missing` se siguen creando **siempre antes de imputar** (parte ya fija). Detalle en
+  [`notebooks/02_preprocesado.ipynb`](../notebooks/02_preprocesado.ipynb), "Anexo · Experimento D-P.2".
+- **Estado:** **Confirmada**
+- **Decidido por / fecha:** Grupo / 2026-06-20
 
 ### D-P.3 · Variables a transformar con log
 - **Decisión:** qué columnas se log-transforman antes de modelar.
@@ -376,9 +383,10 @@ Decisiones derivadas sobre todo del [EDA]; sin sección propia en teoría, pero 
 | Tarea 2 — FAIR loss | 7 | 6 | 0 | 0 | 1 (D-2.7) |
 | Tarea 3 — Keras Tuner | 4 | 4 | 0 | 0 | 0 |
 | Tarea 4 — Incertidumbre | 5 | 3 | 0 | 0 | 2 (D-4.2, D-4.4) |
-| Preprocesado | 7 | 0 | 6 | 1 (D-P.2) | 0 |
-| **Total** | **29** | **19** | **6** | **1** | **3** |
+| Preprocesado | 7 | 0 | 7 | 0 | 0 |
+| **Total** | **29** | **19** | **7** | **0** | **3** |
 
-**Preprocesado validado por el grupo (2026-06-19):** D-P.1, D-P.3, D-P.4, D-P.5, D-P.6 y D-P.7
-**Confirmadas**; D-P.2 en **Revisar** (método base fijado, elección final mediana vs alternativa pendiente
-de comparar por AUC en validación). Las decisiones de las Tareas 1-4 siguen pendientes de validación.
+**Preprocesado validado por el grupo:** las **7** fichas (D-P.1 a D-P.7) están **Confirmadas**; ya no queda
+ninguna en **Revisar**. D-P.2 quedó **Confirmada (2026-06-20)** tras el experimento de AUC en validación, que
+dio ganadora a la **mediana** (AUC val = 0,728034); el resto (D-P.1, D-P.3, D-P.4, D-P.5, D-P.6, D-P.7) se
+confirmaron el 2026-06-19. Las decisiones de las Tareas 1-4 siguen pendientes de validación.
