@@ -1,0 +1,2 @@
+modelo,AUC_ROC,accuracy,group_gap_pp,tasa_pred_M,tasa_pred_F
+base (sin FAIR),0.7437,0.6899,5.3583,0.4639,0.4104

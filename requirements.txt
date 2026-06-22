@@ -1,5 +1,6 @@
 tensorflow
 keras-tuner
+tensorboard      # requerido por keras-tuner en tiempo de búsqueda (Tarea 3)
 scikit-learn
 pandas
 numpy

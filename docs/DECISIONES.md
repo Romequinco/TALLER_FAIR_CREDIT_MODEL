@@ -176,6 +176,19 @@ Fuente de huecos: [`docs/teoria/02-fair-loss.md`](teoria/02-fair-loss.md) §5 y
 ## Tarea 3 — AutoML / Keras Tuner
 
 Fuente de huecos: [`docs/teoria/03-keras-tuner.md`](teoria/03-keras-tuner.md) §5.
+Implementación: [`src/tuning.py`](../src/tuning.py) + [`notebooks/06_tarea3_keras_tuner.ipynb`](../notebooks/06_tarea3_keras_tuner.ipynb).
+
+> **Resultado de la ejecución (2026-06-22).** Frontera de Pareto **AUC vs |group gap|** barriendo
+> `λ ∈ {0, 0.5, 1, 2, 5}`. Para evitar confundir el efecto del fairness con el de la topología, además
+> del barrido del tuner se hace un **barrido LIMPIO con topología fija (backbone de mayor AUC) y 3
+> semillas** (media ± std). **Compromiso elegido: λ\*=0.5** sobre el backbone `1 capa · 80 u · dropout 0.3
+> · lr 6.7e-3 · relu`. **Precio de la justicia en test:** `λ=0` AUC 0.7407 / gap +5.73 pp → `λ*=0.5`
+> AUC 0.7407 / gap +3.77 pp, es decir **ΔAUC ≈ 0 (dentro de 1σ) reduciendo el gap ~34 %**. La
+> dependencia usada es el **fallback `corr²`** (la HSIC de D-2.1 aún no entregada en `src/fair_loss.py`);
+> el diseño es **enchufable** y las figuras se marcan *preliminar*. Modelo persistido para el NB07 en
+> `data/models/06_modelo_compromiso.*` (cruce D-3.2 ↔ D-4.1). Entregables: `results/figures/06_tuner__pareto_auc_vs_gap.png`
+> (tuner), `06_tuner__pareto_limpia_semillas.png` (limpia con barras de error), `06_tuner__curva_loss_mejor.png`;
+> tablas `06_tuner__trials.csv`, `06_tuner__pareto_limpio_seeds.csv`.
 
 ### D-3.1 · Estrategia de búsqueda
 - **Decisión:** qué tuner usar.
@@ -183,8 +196,11 @@ Fuente de huecos: [`docs/teoria/03-keras-tuner.md`](teoria/03-keras-tuner.md) §
 - **Propuesta:** **Hyperband** (o RandomSearch como base), porque la propia charla del profe avisa de
   que en NAS lo sofisticado "no funciona mucho mejor que random" ([T3] §2), y Hyperband exprime mejor el
   presupuesto descartando configuraciones malas pronto. Bayesiana queda como alternativa si sobra tiempo.
-- **Estado:** Propuesta
-- **Decidido por / fecha:** _(pendiente)_
+- **Resultado (2026-06-22):** se compararon **Hyperband vs RandomSearch** en λ=1.0 → **empate técnico**
+  (Δval_auc ≈ 0.0000 < 0.001). Se usa **Hyperband** por la propuesta por defecto, dejando constancia de que
+  RandomSearch sería igual de válido y ~2× más barato (la teoría lo respalda).
+- **Estado:** **Confirmada** *(implementación; pendiente ratificar en grupo)*
+- **Decidido por / fecha:** Oscar / 2026-06-22
 
 ### D-3.2 · Hiperparámetros del espacio de búsqueda
 - **Decisión:** qué se busca.
@@ -192,8 +208,11 @@ Fuente de huecos: [`docs/teoria/03-keras-tuner.md`](teoria/03-keras-tuner.md) §
 - **Propuesta:** incluir **nº de capas, unidades por capa, dropout y su tasa, learning rate (log),
   activación y `λ_fair`** ([T3] §4). El **dropout entra sí o sí** porque es la palanca de MC-Dropout de la
   Tarea 4 (D-4.1); `λ_fair` se trata como el eje que se barre para la frontera (D-3.3).
-- **Estado:** Propuesta
-- **Decidido por / fecha:** _(pendiente)_
+- **Resultado (2026-06-22):** espacio implementado = `n_layers∈[1,3]`, `units_i∈[16,128] step 16`,
+  `dropout_rate∈[0.1,0.5] step 0.1` (**siempre**, el backbone elegido tiene 0.3 → apto MC-Dropout),
+  `lr∈[1e-4,1e-2] log`, `activation∈{relu,tanh}`. `λ_fair` **NO** entra en el tuner: es eje externo (D-3.3/D-3.4).
+- **Estado:** **Confirmada** *(implementación; pendiente ratificar en grupo)*
+- **Decidido por / fecha:** Oscar / 2026-06-22
 
 ### D-3.3 · Cómo extraer los pares (precisión, dependencia FAIR) por trial
 - **Decisión:** cómo se materializa la curva de Pareto, ya que el tuner optimiza un solo escalar.
@@ -203,8 +222,12 @@ Fuente de huecos: [`docs/teoria/03-keras-tuner.md`](teoria/03-keras-tuner.md) §
   para la topología dentro de cada `λ`. La frontera de Pareto **no sale "gratis"** del `objective` escalar
   ([T3] §4, §5); hay que recoger las dos métricas a mano. El eje X es la dependencia FAIR (D-2.3), el eje Y
   la precisión (D-2.4).
-- **Estado:** Propuesta
-- **Decidido por / fecha:** _(pendiente)_
+- **Resultado (2026-06-22):** implementado el bucle externo sobre `λ`. **Mejora sobre la propuesta:** como
+  el tuner elige una topología distinta por λ (confunde fairness con arquitectura) y una sola semilla cae en
+  el ruido, se añade un **barrido limpio con topología fija + multi-semilla** (media±std) que es la frontera
+  de referencia; la del tuner queda como evidencia del AutoML. Todos los λ se evalúan también en **test**.
+- **Estado:** **Confirmada** *(implementación; pendiente ratificar en grupo)*
+- **Decidido por / fecha:** Oscar / 2026-06-22
 
 ### D-3.4 · Métrica objetivo del tuner
 - **Decisión:** qué se pasa a `objective`.
@@ -212,8 +235,10 @@ Fuente de huecos: [`docs/teoria/03-keras-tuner.md`](teoria/03-keras-tuner.md) §
 - **Propuesta:** **`val_auc`** (maximizar) como objetivo de la topología, **tratando el fairness como
   eje externo** (D-3.3) y no como objetivo del tuner. Evita mezclar dos objetivos en un escalar, que el
   material no resuelve ([T3] §5 hueco 1-2).
-- **Estado:** Propuesta
-- **Decidido por / fecha:** _(pendiente)_
+- **Resultado (2026-06-22):** implementado `objective = kt.Objective("val_auc", "max")`, con una métrica
+  `SlicedAUC` que desempaqueta `y_true=[y,s]` (D-2.5) para medir AUC solo contra `y`. Confirmado.
+- **Estado:** **Confirmada** *(implementación; pendiente ratificar en grupo)*
+- **Decidido por / fecha:** Oscar / 2026-06-22
 
 ---
 
@@ -469,11 +494,16 @@ y `results/tables/03_base__metricas_test.csv` (parte base de E5).
 | --- | --- | --- | --- | --- | --- |
 | Tarea 1 — Capa custom | 6 | 6 | 0 | 0 | 0 |
 | Tarea 2 — FAIR loss | 7 | 6 | 0 | 0 | 1 (D-2.7) |
-| Tarea 3 — Keras Tuner | 4 | 4 | 0 | 0 | 0 |
+| Tarea 3 — Keras Tuner | 4 | 0 | 4 | 0 | 0 |
 | Tarea 4 — Incertidumbre | 5 | 3 | 0 | 0 | 2 (D-4.2, D-4.4) |
 | Preprocesado | 7 | 0 | 7 | 0 | 0 |
 | Modelo base (NB 03) | 5 | 0 | 5 | 0 | 0 |
-| **Total** | **34** | **19** | **12** | **0** | **3** |
+| **Total** | **34** | **15** | **16** | **0** | **3** |
+
+> **Tarea 3 confirmada (implementación, 2026-06-22):** las 4 fichas D-3.1–D-3.4 quedan implementadas y
+> validadas por ejecución (ver el bloque de resultado al inicio de la sección). Marcadas **Confirmada
+> (implementación)** a falta de ratificación formal del grupo. La dependencia FAIR usada es el fallback
+> `corr²` porque la HSIC de la Tarea 2 (D-2.1) aún no está entregada; al enchufarla, re-ejecutar el NB06.
 
 **Preprocesado validado por el grupo:** las **7** fichas (D-P.1 a D-P.7) están **Confirmadas**; ya no queda
 ninguna en **Revisar**. D-P.2 quedó **Confirmada (2026-06-20)** tras el experimento de AUC en validación, que

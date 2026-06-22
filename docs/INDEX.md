@@ -43,9 +43,9 @@ El contrato de datos `(X, y, s)` y las decisiones de preprocesado (`D-P.*`) qued
 | `01_EDA.ipynb` | EDA avanzado orientado a las 4 tareas | ✅ completo |
 | `02_preprocesado.ipynb` | Pipeline sin fuga, contrato `(X, y, s)`, decisiones `D-P.1`–`D-P.7` | ✅ completo |
 | `03_modelo_base.ipynb` | Modelo base sin FAIR (referencia "base vs mejor FAIR", E5; decisiones `D-MB.1`–`D-MB.5`) | ✅ completo |
-| `04_tarea1_capa_custom.ipynb` | **Tarea 1** — capa custom del ratio de endeudamiento (`D-1.x`) | 🟡 esqueleto |
+| `04_tarea1_capa_custom.ipynb` | **Tarea 1** — capa custom del ratio de endeudamiento (`D-1.x`) | ✅ implementado |
 | `05_tarea2_fair_loss.ipynb` | **Tarea 2** — FAIR loss; produce la tabla E5 (`D-2.x`) | 🟡 esqueleto |
-| `06_tarea3_keras_tuner.ipynb` | **Tarea 3** — AutoML / Keras Tuner; produce la Pareto E2 (`D-3.x`) | 🟡 esqueleto |
+| `06_tarea3_keras_tuner.ipynb` | **Tarea 3** — AutoML / Keras Tuner; produce la Pareto E2 (`D-3.x`) | ✅ implementado |
 | `07_tarea4_incertidumbre.ipynb` | **Tarea 4** — clase + varianza; produce E3 (`D-4.x`) | 🟡 esqueleto |
 
 > 🟡 **esqueleto** = estructura, imports y carga de datos montados y verificados (ejecutan

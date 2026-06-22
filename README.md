@@ -40,7 +40,7 @@ centrado en perfiles con poco historial crediticio.
    Modificación del modelo para que la predicción sobre test devuelva tanto la clase
    predicha como la varianza / incertidumbre de la misma.
 
-## Estado del proyecto (2026-06-20)
+## Estado del proyecto (2026-06-22)
 
 Trabajo hecho y lo que falta. El registro completo de decisiones de diseño está en
 [`docs/DECISIONES.md`](docs/DECISIONES.md).
@@ -64,13 +64,22 @@ Trabajo hecho y lo que falta. El registro completo de decisiones de diseño est�
   desbalance, parada por `val_auc` (`restore_best_weights`) y auditoría de equidad por group gap M−F.
   Es la línea base del "base vs mejor FAIR" (E5) y monta el dropout que reusan Keras Tuner (06) y
   MC-Dropout (07). Sus decisiones de diseño **D-MB.1 a D-MB.5 están Confirmadas**.
-- 🟡 **Tareas 1-4 — esqueletos montados, pendiente implementar.** Los cuatro notebooks restantes
-  (`04_tarea1_capa_custom`, `05_tarea2_fair_loss`, `06_tarea3_keras_tuner`, `07_tarea4_incertidumbre`)
-  están creados con estructura, imports y **carga de datos `(X, y, s)` verificada** (ejecutan limpio),
-  siguiendo [`docs/CONVENCIONES_MODELADO.md`](docs/CONVENCIONES_MODELADO.md). **Falta la lógica de
-  modelos** (Tarea 1 capa custom, Tarea 2 FAIR loss, Tarea 3 Keras Tuner, Tarea 4 incertidumbre): los
-  módulos de `src/` siguen siendo esqueletos y sus decisiones de diseño (`D-1.x`–`D-4.x`) siguen en
-  estado **Propuesta/Abierta**, a validar con el grupo antes de codificar.
+- ✅ **Tarea 1 — Capa custom implementada** ([`notebooks/04_tarea1_capa_custom.ipynb`](notebooks/04_tarea1_capa_custom.ipynb),
+  [`src/custom_layers.py`](src/custom_layers.py)): capa `DebtRatioSaturatingLayer` (DTI + saturación `x^p`
+  entrenable) integrada en el MLP. AUC ≈ 0,745 y mejora del group gap respecto al base.
+- ✅ **Tarea 3 — Keras Tuner implementada** ([`notebooks/06_tarea3_keras_tuner.ipynb`](notebooks/06_tarea3_keras_tuner.ipynb),
+  [`src/tuning.py`](src/tuning.py)): búsqueda de topología (Hyperband, `objective=val_auc`) + barrido de `λ`
+  para la **frontera de Pareto** Precisión vs Dependencia FAIR. Además del barrido del tuner se hace un
+  **barrido limpio (topología fija + 3 semillas, barras de error)** para aislar el efecto de `λ`.
+  **Resultado:** compromiso `λ*=0.5` con **ΔAUC ≈ 0 (dentro de 1σ) reduciendo el group gap ~34 %** en test.
+  Decisiones `D-3.1`–`D-3.4` **Confirmadas (implementación)**. *Nota:* usa el fallback `corr²` como medida
+  de dependencia porque la FAIR loss (Tarea 2) aún no está entregada; el diseño es **enchufable** a la HSIC.
+- 🟡 **Tarea 2 — FAIR loss pendiente** ([`notebooks/05_tarea2_fair_loss.ipynb`](notebooks/05_tarea2_fair_loss.ipynb),
+  [`src/fair_loss.py`](src/fair_loss.py) **vacío**): bloquea la versión definitiva de la Pareto (06) y la
+  tabla E5; decisiones `D-2.x` en **Propuesta/Abierta**. El NB06 funciona con el fallback `corr²` mientras tanto.
+- 🟡 **Tarea 4 — Incertidumbre pendiente** ([`notebooks/07_tarea4_incertidumbre.ipynb`](notebooks/07_tarea4_incertidumbre.ipynb),
+  [`src/uncertainty.py`](src/uncertainty.py)): hereda el modelo de compromiso del 06 (`data/models/06_modelo_compromiso.*`,
+  con dropout 0.3) para MC-Dropout; decisiones `D-4.x` en **Propuesta/Abierta**.
 
 ## Estructura del repositorio
 
@@ -94,15 +103,15 @@ taller-b4-t1-fairness/
 │   ├── 01_EDA.ipynb       # EDA avanzado orientado a las 4 tareas
 │   ├── 02_preprocesado.ipynb     # Pipeline de preprocesado sin fuga (D-P.1 a D-P.7)
 │   ├── 03_modelo_base.ipynb      # Modelo base sin FAIR (referencia E5) — ✅ implementado
-│   ├── 04_tarea1_capa_custom.ipynb   # Tarea 1 — capa custom del ratio — esqueleto
-│   ├── 05_tarea2_fair_loss.ipynb     # Tarea 2 — FAIR loss (tabla E5) — esqueleto
-│   ├── 06_tarea3_keras_tuner.ipynb   # Tarea 3 — Keras Tuner (Pareto E2) — esqueleto
-│   └── 07_tarea4_incertidumbre.ipynb # Tarea 4 — clase + varianza (E3) — esqueleto
-├── src/                   # Código fuente del proyecto (módulos aún esqueletos)
-│   ├── custom_layers.py   # Tarea 1 — capa del ratio de endeudamiento
-│   ├── fair_loss.py       # Tarea 2 — loss con penalización de dependencia
-│   ├── tuning.py          # Tarea 3 — búsqueda de topología (Keras Tuner)
-│   └── uncertainty.py     # Tarea 4 — predicción con clase + varianza
+│   ├── 04_tarea1_capa_custom.ipynb   # Tarea 1 — capa custom del ratio — ✅ implementado
+│   ├── 05_tarea2_fair_loss.ipynb     # Tarea 2 — FAIR loss (tabla E5) — 🟡 esqueleto
+│   ├── 06_tarea3_keras_tuner.ipynb   # Tarea 3 — Keras Tuner (Pareto E2) — ✅ implementado
+│   └── 07_tarea4_incertidumbre.ipynb # Tarea 4 — clase + varianza (E3) — 🟡 esqueleto
+├── src/                   # Código fuente del proyecto
+│   ├── custom_layers.py   # Tarea 1 — capa del ratio de endeudamiento — ✅
+│   ├── fair_loss.py       # Tarea 2 — loss con penalización de dependencia — 🟡 vacío
+│   ├── tuning.py          # Tarea 3 — búsqueda de topología (Keras Tuner) — ✅
+│   └── uncertainty.py     # Tarea 4 — predicción con clase + varianza — 🟡
 ├── results/               # Salidas reproducibles del código
 │   ├── figures/           # Gráficas (Pareto, distribución de incertidumbre, curvas de loss)
 │   └── tables/            # Tablas (comparativa modelo base vs. mejor modelo FAIR)

@@ -227,6 +227,8 @@ data/*
 !data/README.md
 !data/.gitkeep
 *.csv
+# las tablas de results/ SÍ son entregables del taller (excepción al *.csv de arriba)
+!results/tables/*.csv
 *.h5
 *.keras
 
@@ -235,6 +237,9 @@ untitled_project/
 *_tuner/
 keras_tuner_dir/
 tuner_results/
+kt_dir/
+kt_dir_test/
+notebooks/kt_dir/
 
 # Material de estudio del profesor y de clase (protección de datos):
 # NO versionar nada de docs/_fuentes/ (clases-master/, profe-lectures/,
