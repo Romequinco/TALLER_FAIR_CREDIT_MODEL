@@ -15,9 +15,14 @@ Decisiones implementadas (ver docs/DECISIONES.md):
   - D-2.4  precisión = AUC-ROC.
   - D-2.5  ``s`` (género) entra empaquetado en ``y_true = [y, s]``.
 
-Desacople de la Tarea 2: si ``src/fair_loss.py`` ya define ``fair_loss`` se usa
-esa (HSIC del compañero); si no, se usa un **fallback local** corr²(p, s) — el
-caso sencillo de D-2.1 — para que el notebook 6 produzca el Pareto igualmente.
+Acople con la Tarea 2: la FAIR loss toma SOLO la medida de dependencia ``measure``
+('corr2' | 'hsic' | 'mmd') del registro ``src.fair_loss.DEPENDENCE_MEASURES`` (la
+implementación verificada del compañero B) y la combina con una BCE PROPIA ponderada
+por clases (D-MB.3) — no se usa la BCE de ``src.fair_loss`` (sin pesos). Al aplicar
+el mismo balanceo a todas las medidas, el término BCE es idéntico entre ellas; en
+cambio la escala de ``D`` NO es comparable (corr²∈[0,1], MMD²~[0,0.1], HSIC~[0,0.02]),
+así que cada medida necesita su PROPIA rejilla de λ (el notebook 6 lo hace). Si
+``src/fair_loss.py`` no estuviera disponible se cae a un **fallback local** corr²(p,s).
 """
 
 from __future__ import annotations
@@ -60,15 +65,26 @@ def corr2_dependency(p, s):
     return corr * corr
 
 
-def make_fair_loss(lambda_fair, w0=1.0, w1=1.0):
-    """Fallback local: BCE ponderada (balance de clases, D-MB.3) + λ·corr²(p, s).
+def make_fair_loss(lambda_fair, dep_fn=None, w0=1.0, w1=1.0):
+    """BCE ponderada (balance de clases, D-MB.3) + λ·D(p, s) con D = ``dep_fn``.
 
     ``y_true`` llega empaquetado como ``[y, s]`` (D-2.5); ``y_pred`` es la
     probabilidad P(impago) (D-2.6). El término de fairness es un estadístico de
     batch, por eso la loss devuelve un escalar y el balance de clases se aplica
     DENTRO (no vía ``class_weight``, incompatible con el ``y_true`` empaquetado).
+
+    ``dep_fn(p, s)`` es la medida de dependencia diferenciable (firma idéntica en
+    el fallback local ``corr2_dependency`` y en las medidas de ``src.fair_loss``:
+    ``dependence_corr2`` / ``dependence_hsic`` / ``dependence_mmd``). Si es None se
+    usa el fallback corr². El balance de clases (w0/w1) se aplica IGUAL para toda
+    medida -> el término BCE es idéntico entre medidas (unifica la H3 de la revisión:
+    ya no hay un camino con class-weight y otro sin él). OJO: esto NO hace λ
+    comparable entre medidas — la escala de ``D`` difiere (corr²∈[0,1] vs HSIC~[0,0.02]),
+    por eso cada medida usa su propia rejilla de λ en el notebook.
     """
     lambda_fair = float(lambda_fair)
+    if dep_fn is None:
+        dep_fn = corr2_dependency
 
     def loss(y_true, y_pred):
         y = keras.ops.cast(y_true[:, 0], "float32")
@@ -79,29 +95,37 @@ def make_fair_loss(lambda_fair, w0=1.0, w1=1.0):
         bce = keras.ops.mean(w * bce)
         if lambda_fair == 0.0:
             return bce
-        return bce + lambda_fair * corr2_dependency(p, s)
+        return bce + lambda_fair * dep_fn(p, s)
 
     return loss
 
 
-def resolve_fair_loss(lambda_fair, w0=1.0, w1=1.0):
-    """Devuelve (loss_callable, fuente). Prioriza la fair_loss del compañero B.
+def resolve_fair_loss(lambda_fair, measure="corr2", w0=1.0, w1=1.0):
+    """Devuelve (loss_callable, fuente). Usa las medidas REALES de la Tarea 2.
 
-    Solo cae al fallback si ``fair_loss`` NO existe todavía (ImportError/AttributeError).
-    Si existe pero falla en ejecución, el error sale a la luz durante el entrenamiento
-    (no se enmascara). Nota: el fallback aplica balance de clases (w0/w1) dentro de la
-    BCE; la HSIC externa se invoca SIN w0/w1 -> al enchufarla, unificar el tratamiento
-    del desbalance para que la escala de λ sea comparable (ver H3 de la revisión)."""
+    Toma la medida de dependencia ``measure`` ('corr2' | 'hsic' | 'mmd') del
+    registro ``src.fair_loss.DEPENDENCE_MEASURES`` (implementación verificada del
+    compañero B) y la combina con la BCE ponderada local -> tratamiento del
+    desbalance UNIFICADO (mismo término BCE para todas las medidas). La escala de
+    ``D`` difiere entre medidas, así que λ se barre con rejilla propia por medida.
+
+    Solo cae al fallback local ``corr2_dependency`` si ``src.fair_loss`` no está
+    disponible o no expone la medida pedida (ImportError/AttributeError/KeyError).
+    La fuente devuelta es ``"src.fair_loss:<measure>"`` o ``"fallback:corr2"``.
+    """
     try:
-        from src.fair_loss import fair_loss as _ext  # type: ignore
-    except (ImportError, AttributeError):
-        return make_fair_loss(lambda_fair, w0, w1), "fallback:corr2"
-    return (lambda yt, yp: _ext(yt, yp, float(lambda_fair))), "src.fair_loss"
+        from src.fair_loss import DEPENDENCE_MEASURES  # type: ignore
+        dep_fn = DEPENDENCE_MEASURES[measure]
+        source = f"src.fair_loss:{measure}"
+    except (ImportError, AttributeError, KeyError):
+        dep_fn = corr2_dependency
+        source = "fallback:corr2"
+    return make_fair_loss(lambda_fair, dep_fn, w0, w1), source
 
 
-def fair_loss_source():
-    """Diagnóstico: ¿qué dependencia se usa ('src.fair_loss' o fallback:corr2)?"""
-    return resolve_fair_loss(1.0)[1]
+def fair_loss_source(measure="corr2"):
+    """Diagnóstico: ¿qué dependencia se usa ('src.fair_loss:<measure>' o fallback)?"""
+    return resolve_fair_loss(1.0, measure)[1]
 
 
 # --------------------------------------------------------------------------- #
@@ -118,12 +142,13 @@ class SlicedAUC(keras.metrics.AUC):
 # 3. build_model(hp) — espacio de búsqueda (D-3.2)
 # --------------------------------------------------------------------------- #
 def make_build_model(lambda_fair, n_features=13, include_custom_layer=True,
-                     class_weights=(1.0, 1.0), units_max=128):
+                     class_weights=(1.0, 1.0), units_max=128, measure="corr2"):
     """Fábrica de ``build_model(hp)`` con ``lambda_fair`` fijo (eje externo, D-3.3).
 
     ``units_max`` amplía el rango de unidades para que el tuner pueda alcanzar la
     capacidad del modelo base 03 (64→32) y no quede dominado por él (ver crítica
-    'el afinado no bate al base')."""
+    'el afinado no bate al base'). ``measure`` selecciona la dependencia de la
+    FAIR loss ('corr2' | 'hsic' | 'mmd', Tarea 2)."""
     w0, w1 = float(class_weights[0]), float(class_weights[1])
 
     def build_model(hp):
@@ -146,7 +171,7 @@ def make_build_model(lambda_fair, n_features=13, include_custom_layer=True,
         out = keras.layers.Dense(1, activation="sigmoid", name="salida")(x)
 
         model = keras.Model(inputs, out, name=f"mlp_tuner_lam{lambda_fair}")
-        loss, _ = resolve_fair_loss(lambda_fair, w0, w1)
+        loss, _ = resolve_fair_loss(lambda_fair, measure, w0, w1)
         model.compile(
             optimizer=keras.optimizers.Adam(learning_rate=lr),
             loss=loss,
@@ -173,15 +198,64 @@ def class_weights_balanced(y):
     return float(cw[0]), float(cw[1])
 
 
-def evaluate(model, X, y, s):
-    """Devuelve métricas (AUC D-2.4, group gap D-2.3, accuracy) y las probas."""
+def dep_value(p, s, measure="corr2", n_max=4096, seed=0):
+    """Valor numerico de la dependencia D(p,s) que PENALIZA la loss (corr2/hsic/mmd).
+
+    Es la 'Medida de Dependencia FAIR' que el enunciado pide en el eje X del Pareto
+    (lo que de verdad se minimiza), distinta del group gap que se reporta. Para los
+    kernels (hsic/mmd) la matriz n x n es inviable en val completo (46k): se submuestrea
+    a ``n_max`` puntos. corr2 es O(n), se calcula entero. Devuelve float (np.nan si la
+    medida no esta disponible)."""
+    import keras
+    try:
+        from src.fair_loss import DEPENDENCE_MEASURES
+        fn = DEPENDENCE_MEASURES[measure]
+    except (ImportError, AttributeError, KeyError):
+        return float("nan")
+    p = np.asarray(p, "float32").reshape(-1)
+    s = np.asarray(s, "float32").reshape(-1)
+    if measure in ("hsic", "mmd") and len(p) > n_max:
+        idx = np.random.default_rng(seed).choice(len(p), n_max, replace=False)
+        p, s = p[idx], s[idx]
+    val = fn(keras.ops.convert_to_tensor(p), keras.ops.convert_to_tensor(s))
+    return float(keras.ops.convert_to_numpy(val))
+
+
+def tpr_fpr_gaps(y, s, p, thr=0.5):
+    """Métricas de equidad CONDICIONADAS por y (equalized-odds, D-2.3 ampliada).
+
+    Group gap (paridad demográfica) no condiciona por el resultado real; aquí se
+    añaden las brechas de TPR y FPR entre hombres (s=1) y mujeres (s=0):
+      ΔTPR = TPR_M − TPR_F  (igualdad de oportunidad entre buenos pagadores)
+      ΔFPR = FPR_M − FPR_F  (mismo trato a los malos pagadores)
+    En pp. Cercanas a 0 = el modelo trata igual a ambos grupos *a igualdad de y*.
+    """
+    y = np.asarray(y).astype(int); s = np.asarray(s).astype(int)
+    yhat = (np.asarray(p) >= thr).astype(int)
+
+    def _rate(mask_grupo, cond_y):
+        m = mask_grupo & (y == cond_y)
+        return float(yhat[m].mean()) if m.sum() > 0 else float("nan")
+
+    tpr_m, tpr_f = _rate(s == 1, 1), _rate(s == 0, 1)
+    fpr_m, fpr_f = _rate(s == 1, 0), _rate(s == 0, 0)
+    return {"dtpr_pp": (tpr_m - tpr_f) * 100.0, "dfpr_pp": (fpr_m - fpr_f) * 100.0}
+
+
+def evaluate(model, X, y, s, with_odds=False):
+    """Devuelve métricas (AUC D-2.4, group gap D-2.3, accuracy) y las probas.
+
+    Si ``with_odds`` añade las brechas condicionadas ΔTPR/ΔFPR (equalized-odds)."""
     p = model.predict(np.asarray(X, "float32"), verbose=0).ravel()
     y = np.asarray(y).astype(int)
     s = np.asarray(s).astype(int)
     auc = roc_auc_score(y, p)
     gap_pp = (p[s == 1].mean() - p[s == 0].mean()) * 100.0
     acc = accuracy_score(y, (p >= 0.5).astype(int))
-    return {"auc": float(auc), "gap_pp": float(gap_pp), "accuracy": float(acc)}, p
+    out = {"auc": float(auc), "gap_pp": float(gap_pp), "accuracy": float(acc)}
+    if with_odds:
+        out.update(tpr_fpr_gaps(y, s, p))
+    return out, p
 
 
 def pareto_front(points):
@@ -240,17 +314,19 @@ def tune_one_lambda(lam, data, strategy="hyperband", n_features=13,
                     include_custom_layer=True, class_weights=(1.0, 1.0),
                     max_epochs=15, max_trials=8, factor=3, final_epochs=40,
                     search_subsample=None, batch_size=512, directory="kt_dir",
-                    seed=42, units_max=128, test=None, verbose=0):
+                    seed=42, units_max=128, measure="corr2", test=None, verbose=0):
     """Busca topología para un ``lam`` fijo, reentrena el mejor y evalúa en val.
 
     ``data`` = (X_train, y_train, s_train, X_val, y_val, s_val).
+    ``measure`` = dependencia de la FAIR loss ('corr2' | 'hsic' | 'mmd', Tarea 2).
     ``test`` = (X_test, y_test, s_test) opcional -> añade métricas de test al registro.
     Devuelve (registro_dict, best_model, history)."""
     X_train, y_train, s_train, X_val, y_val, s_val = data
     Xtr, ytr_pack, Xvl, yvl_pack = _search_arrays(
         X_train, y_train, s_train, X_val, y_val, s_val, search_subsample, seed)
 
-    build_fn = make_build_model(lam, n_features, include_custom_layer, class_weights, units_max)
+    build_fn = make_build_model(lam, n_features, include_custom_layer,
+                                class_weights, units_max, measure)
     tag = f"{strategy}_lam{str(lam).replace('.', 'p')}"
     tuner = build_tuner(build_fn, strategy=strategy, directory=directory,
                         project_name=tag, max_epochs=max_epochs,
@@ -288,7 +364,8 @@ def tune_one_lambda(lam, data, strategy="hyperband", n_features=13,
         "lr": best_hp.get("lr"),
         "activation": best_hp.get("activation"),
         "hp_values": json.dumps(best_hp.values),   # topología completa reconstruible (todas las units_i)
-        "fair_source": fair_loss_source(),
+        "measure": measure,
+        "fair_source": fair_loss_source(measure),
     }
     if test is not None:
         metrics_test, _ = evaluate(best_model, *test)
@@ -312,12 +389,14 @@ def run_lambda_sweep(data, lambdas, strategy="hyperband", **kwargs):
 # 6. Barrido LIMPIO: topología FIJA + multi-semilla (aísla λ, da barras de error)
 # --------------------------------------------------------------------------- #
 def build_fixed_model(hp_values, lambda_fair, n_features=13,
-                      include_custom_layer=True, class_weights=(1.0, 1.0)):
+                      include_custom_layer=True, class_weights=(1.0, 1.0),
+                      measure="corr2"):
     """Construye una topología FIJA (de un dict de hiperparámetros) para un λ dado.
 
     A diferencia de ``make_build_model`` (que deja que el tuner elija), aquí la
-    arquitectura es la MISMA para todos los λ -> el único cambio es λ, así la
-    frontera mide el efecto del fairness sin confundirlo con la topología."""
+    arquitectura es la MISMA para todos los λ -> el único cambio es λ (y la
+    ``measure`` de dependencia), así la frontera mide el efecto del fairness sin
+    confundirlo con la topología."""
     w0, w1 = float(class_weights[0]), float(class_weights[1])
     n_layers = int(hp_values["n_layers"])
     activation = hp_values["activation"]
@@ -335,7 +414,7 @@ def build_fixed_model(hp_values, lambda_fair, n_features=13,
         x = keras.layers.Dropout(dropout_rate, name=f"dropout_{i}")(x)
     out = keras.layers.Dense(1, activation="sigmoid", name="salida")(x)
     model = keras.Model(inputs, out)
-    loss, _ = resolve_fair_loss(lambda_fair, w0, w1)
+    loss, _ = resolve_fair_loss(lambda_fair, measure, w0, w1)
     model.compile(optimizer=keras.optimizers.Adam(learning_rate=lr),
                   loss=loss, metrics=[SlicedAUC(name="auc")])
     return model
@@ -343,12 +422,13 @@ def build_fixed_model(hp_values, lambda_fair, n_features=13,
 
 def sweep_lambda_fixed(data, lambdas, hp_values, seeds=(42, 7, 123),
                        n_features=13, include_custom_layer=True, class_weights=(1.0, 1.0),
-                       epochs=40, batch_size=512, test=None, verbose=0):
+                       epochs=40, batch_size=512, measure="corr2", test=None, verbose=0):
     """Barre λ con TOPOLOGÍA FIJA (``hp_values``) y varias ``seeds``.
 
     Para cada λ entrena una vez por semilla y agrega media ± std de (AUC, group gap)
     en validación -> barras de error que muestran si las diferencias entre λ superan
-    el ruido de entrenamiento. ``test`` opcional añade media de métricas en test.
+    el ruido de entrenamiento. ``measure`` fija la dependencia ('corr2'|'hsic'|'mmd').
+    ``test`` opcional añade media de métricas en test (incl. ΔTPR/ΔFPR equalized-odds).
     Devuelve lista de dicts (una fila por λ)."""
     X_train, y_train, s_train, X_val, y_val, s_val = data
     Xtr = np.asarray(X_train, "float32"); ytr = pack_ys(y_train, s_train)
@@ -356,24 +436,28 @@ def sweep_lambda_fixed(data, lambdas, hp_values, seeds=(42, 7, 123),
 
     filas = []
     for lam in lambdas:
-        aucs, gaps, aucs_t, gaps_t = [], [], [], []
+        aucs, gaps, deps, aucs_t, gaps_t, dtpr_t, dfpr_t = [], [], [], [], [], [], []
         for sd in seeds:
             keras.utils.set_random_seed(int(sd))
             model = build_fixed_model(hp_values, lam, n_features,
-                                      include_custom_layer, class_weights)
+                                      include_custom_layer, class_weights, measure)
             stop = keras.callbacks.EarlyStopping(monitor="val_auc", mode="max",
                                                  patience=8, restore_best_weights=True)
             model.fit(Xtr, ytr, validation_data=(Xvl, yvl), epochs=epochs,
                       batch_size=batch_size, callbacks=[stop], verbose=verbose)
-            mv, _ = evaluate(model, X_val, y_val, s_val)
+            mv, pv = evaluate(model, X_val, y_val, s_val)
             aucs.append(mv["auc"]); gaps.append(mv["gap_pp"])
+            deps.append(dep_value(pv, s_val, measure))   # D(p,s) penalizada -> eje FAIR literal
             if test is not None:
-                mt, _ = evaluate(model, *test)
+                mt, _ = evaluate(model, *test, with_odds=True)
                 aucs_t.append(mt["auc"]); gaps_t.append(mt["gap_pp"])
+                dtpr_t.append(mt["dtpr_pp"]); dfpr_t.append(mt["dfpr_pp"])
         fila = {
             "lambda": float(lam),
+            "measure": measure,
             "auc_mean": float(np.mean(aucs)), "auc_std": float(np.std(aucs)),
             "gap_mean": float(np.mean(gaps)), "gap_std": float(np.std(gaps)),
+            "dep_mean": float(np.mean(deps)), "dep_std": float(np.std(deps)),
             "n_seeds": len(seeds),
         }
         if test is not None:
@@ -381,5 +465,7 @@ def sweep_lambda_fixed(data, lambdas, hp_values, seeds=(42, 7, 123),
             fila["auc_test_std"] = float(np.std(aucs_t))
             fila["gap_test_mean"] = float(np.mean(gaps_t))
             fila["gap_test_std"] = float(np.std(gaps_t))
+            fila["dtpr_test_mean"] = float(np.mean(dtpr_t))
+            fila["dfpr_test_mean"] = float(np.mean(dfpr_t))
         filas.append(fila)
     return filas

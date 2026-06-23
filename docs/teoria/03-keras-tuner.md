@@ -284,8 +284,9 @@ Trasladando directamente la API vista en
 
 > El nombre y el rol del $\lambda$ de fairness vienen del propio enunciado del
 > taller (compensación precisión vs dependencia FAIR); **la API para declararlo
-> como hiperparámetro es la de Keras Tuner** vista en las fuentes. Que la
-> *pérdida* combine precisión y fairness no está en estas fuentes (ver §5).
+> como hiperparámetro es la de Keras Tuner** vista en las fuentes. La *pérdida*
+> que combina precisión y fairness ($\text{BCE} + \lambda\cdot D(\hat y, S)$) es
+> la de la Tarea 2 (`docs/teoria/02-fair-loss.md`).
 
 Para clasificación, el `compile` cambiaría respecto al ejemplo de regresión:
 una salida `Dense(1, activation='sigmoid')` con
@@ -320,47 +321,100 @@ precisión y fairness.
 > (p. ej. `val_loss`). El frente de Pareto NO sale "gratis" de elegir el mejor
 > modelo; sale de **recoger las dos métricas de todos los trials** y graficarlas.
 > Cómo extraer esos pares por trial (callbacks, `results_summary`, o ejecutar la
-> búsqueda en bucle sobre $\lambda$) es una decisión de diseño (§5).
+> búsqueda en bucle sobre $\lambda$) es una decisión de diseño.
+
+### Dos fronteras de Pareto distintas (no confundirlas)
+
+La implementación final del taller produce **dos** scatters de Pareto que miden
+cosas distintas y conviene no mezclar:
+
+1. **Pareto "oficial" obtenida por Keras Tuner** — la del barrido del tuner, con
+   **topología variable**: cada trial cambia capas/unidades/dropout/activación/
+   $\lambda$, y se registran (Precisión, Dependencia FAIR) por trial. Responde a
+   "¿qué arquitectura barata domina a las demás?".
+2. **Pareto comparada de las 3 medidas** — sobre un **backbone fijo**
+   (la mejor topología que dio el tuner), se barre $\lambda$ por separado para
+   cada una de las tres medidas de dependencia de la Tarea 2 (corr², HSIC, MMD),
+   con **varias semillas** para promediar el ruido de inicialización. Responde a
+   "fijada la arquitectura, ¿qué medida y qué $\lambda$ compran más justicia por
+   euro de precisión?".
+
+Además, los dos **ejes** de "dependencia" no son intercambiables:
+
+- el **eje de dependencia $D$ literal** es el valor de la medida penalizada
+  (corr²/HSIC/MMD del propio entrenamiento), que vive en unidades distintas
+  según la medida;
+- el **eje *group gap*** $\;\Delta = \overline{\hat y}_{S=1}-\overline{\hat y}_{S=0}\;$
+  (en puntos porcentuales) es un **proxy interpretable y común** de
+  (in)justicia que permite comparar las tres medidas en la misma regla, ya que
+  $D$ no es comparable entre medidas. La elección del compromiso se hace mirando
+  el group gap (y las tasas por grupo), no el $D$ crudo.
+
+### Resultado real del taller
+
+Ejecutado el plan anterior (NB06), los hechos:
+
+- **Estrategia de búsqueda**: Hyperband y RandomSearch quedaron en **empate
+  técnico** (misma calidad de mejor trial dentro del ruido), así que se eligió
+  **RandomSearch** por simplicidad y reproducibilidad —coherente con el aviso de
+  la charla de que lo sofisticado no suele batir a random.
+- **Backbone ganador del tuner**: **1 capa oculta, 64 unidades, dropout 0.3,
+  activación `relu`** (salida sigmoide + BCE).
+- **Comparación de las 3 medidas sobre ese backbone**: por **presupuesto de AUC
+  en validación** (aceptar como mucho una pequeña caída de AUC y, dentro de ese
+  presupuesto, quedarse con la que más baja el group gap), el compromiso
+  $(\text{medida}^\star, \lambda^\star)$ elegido fue **corr² con $\lambda^\star = 5$**.
+- **Efecto en test del modelo elegido**: el group gap cae un **−72 %**
+  (de **5.615 pp** a **1.568 pp**) a cambio de solo **−0.59 pp de AUC**.
+- Además del group gap se reporta el criterio de **equalized odds**
+  (las diferencias por grupo $\Delta\text{TPR}$ y $\Delta\text{FPR}$), para no
+  leer la justicia por una única métrica de medias.
+
+> Lectura: con `CODE_GENDER` binaria, la diferencia entre grupos es esencialmente
+> un desplazamiento de medias, así que la penalización lineal (corr²) compra más
+> justicia por unidad de AUC que HSIC (que se diluye con el desbalance) o MMD
+> (más expresiva pero sin ventaja neta aquí). El detalle teórico de las tres
+> medidas está en `docs/teoria/02-fair-loss.md`.
 
 ---
 
-## 5. Huecos / decisiones pendientes
+## 5. Decisiones tomadas (lo que las fuentes no zanjaban)
 
-Lo que las fuentes **no** cubren y hay que decidir en el taller:
+Las fuentes de clase no cubrían varios puntos; así se resolvieron en la
+implementación final:
 
-1. **Optimización simultánea de dos objetivos.** Todo el material optimiza un
-   único escalar (`val_loss`/`val_accuracy`). No hay receta para optimizar
-   precisión y fairness a la vez. Opciones a decidir: (a) barrer $\lambda$ y
-   tratar fairness como restricción/eje en vez de objetivo del tuner; (b)
-   escalarizar en una sola pérdida ponderada; (c) usar un tuner/algoritmo
-   genuinamente multiobjetivo (Optuna soporta multiobjetivo, pero el
-   `clases-master/Optuna_basico.ipynb` solo muestra el caso de un objetivo).
+1. **Optimización simultánea de dos objetivos.** El material optimiza un único
+   escalar (`val_loss`/`val_accuracy`). Se resolvió **barriendo $\lambda$** y
+   tratando la fairness como **eje** (no como objetivo del tuner): el tuner
+   busca topología por un escalar y, sobre el backbone ganador, se barre
+   $\lambda$ para materializar la frontera. No se usó un tuner multiobjetivo.
 
-2. **Métrica objetivo concreta del tuner.** Hay que fijar qué se pasa a
-   `objective`: ¿`val_accuracy`? ¿una métrica custom que combine accuracy y
-   dependencia FAIR? Las fuentes solo muestran `val_loss`.
+2. **Métrica objetivo del tuner y métrica de precisión de la frontera.** El
+   tuner optimiza una métrica predictiva estándar; la calidad de la frontera y
+   la elección del compromiso se leen con **AUC en validación** (no $R^2$, que
+   era de los ejemplos de regresión).
 
-3. **Definición operativa de "Dependencia FAIR".** El cómputo concreto de la
-   métrica del eje X (qué fórmula, sobre qué atributo protegido) no está en
-   estas fuentes; pertenece a las tareas de FAIR del taller.
+3. **Definición operativa de "Dependencia FAIR".** Resuelta en la Tarea 2: la
+   penalización es una de las tres medidas (corr²/HSIC/MMD) sobre `CODE_GENDER`,
+   y como lectura común y comparable se usa el **group gap** (y las tasas por
+   grupo). Detalle en `docs/teoria/02-fair-loss.md`.
 
-4. **Cómo se introduce $\lambda$ en la pérdida.** Declarar `lambda_fair` como
-   `hp.Float` es trivial con la API vista, pero **la pérdida penalizada por
-   fairness no aparece en estas fuentes**; el término que multiplica a
-   $\lambda$ se define en otra tarea del taller.
+4. **Cómo entra $\lambda$ en la pérdida.** `lambda_fair` se declara con la API de
+   Keras Tuner, y el término que multiplica es la FAIR loss de la Tarea 2
+   ($\text{BCE} + \lambda\cdot D(\hat y, S)$). La elección
+   $(\text{medida}^\star,\lambda^\star)$ se hizo por presupuesto de AUC:
+   **corr² con $\lambda^\star=5$**.
 
-5. **Extracción de los pares (Precisión, Dependencia) por trial.** Keras Tuner
-   expone `results_summary()` y `get_best_models()`, pero registrar dos
-   métricas por trial para el scatter requiere decidir el mecanismo (callback
-   propio, logging manual, o bucle externo sobre $\lambda$ reentrenando).
+5. **Extracción de los pares (Precisión, Dependencia) por trial.** Se registran
+   las dos métricas por configuración mediante un **bucle externo sobre
+   $\lambda$** (con varias semillas en la comparación de medidas), además de
+   `results_summary()` para el barrido de topología del tuner.
 
-6. **Estrategia de búsqueda y presupuesto.** Hay que elegir entre
-   `RandomSearch`, `Hyperband` o `BayesianOptimization` y fijar `max_trials` /
-   `factor`, `epochs` y `validation_split`. El material no recomienda valores
-   para este dataset; el profesor sí sugiere Keras Tuner como opción por
-   defecto (`clases-master/26 06 13.pdf`), y la charla avisa de que lo
-   sofisticado no suele batir a random
-   (`clases-master/Automatic_ML_2026.pdf`, pág. 41).
+6. **Estrategia de búsqueda y presupuesto.** Hyperband y RandomSearch quedaron
+   en **empate técnico**, y se eligió **RandomSearch** por simplicidad —en línea
+   con el aviso de que lo sofisticado no suele batir a random
+   (`clases-master/Automatic_ML_2026.pdf`, pág. 41). Backbone resultante:
+   1 capa / 64u / dropout 0.3 / `relu`.
 
 7. **AutoKeras / AutoML "de caja" como alternativa.** La charla describe
    AutoKeras (`StructuredDataClassifier` encajaría con datos tabulares de

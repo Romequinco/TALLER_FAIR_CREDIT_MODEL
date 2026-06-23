@@ -177,6 +177,52 @@ mediana**, $\sigma = \sqrt{\operatorname{median}(d^2)/2}$
 forma de dependencia (lineal y curva) y es **diferenciable** respecto de los
 parámetros del modelo, lo que lo hace usable como penalización.
 
+#### (b') MMD — comparar las dos distribuciones de score (a medida para $S$ binaria)
+
+HSIC pregunta "¿hay *algún* tipo de dependencia entre $\hat y$ y $S$?". Cuando
+$S$ es **binaria** esa pregunta es más fina de lo necesario y, peor, se **diluye
+con el desbalance** de grupos (con `CODE_GENDER` HSIC apenas registra ~0.02). La
+pregunta natural es más concreta: *¿reciben los dos grupos la misma distribución
+de puntuaciones?* Eso es exactamente un **test kernel de dos muestras**, la
+**Maximum Mean Discrepancy (MMD)**: en vez de correlacionar $\hat y$ con $S$,
+compara **las distribuciones completas** del score por grupo,
+$P(\hat y \mid S=1)$ frente a $P(\hat y \mid S=0)$ —no solo sus medias.
+
+Incrustando cada distribución por su media en el RKHS de un kernel
+característico (RBF sobre las predicciones), la MMD es la distancia entre esas
+dos medias incrustadas. Escrita con **pesos de pertenencia** $w_1 = S$ y
+$w_0 = 1-S$ sobre el kernel $K$ de las predicciones (con $n_1=\sum w_1$,
+$n_0=\sum w_0$):
+
+$$
+\operatorname{MMD}^2 \;=\;
+\frac{w_1^\top K\,w_1}{n_1^{\,2}}
+\;+\;
+\frac{w_0^\top K\,w_0}{n_0^{\,2}}
+\;-\;
+2\,\frac{w_1^\top K\,w_0}{n_1\,n_0}.
+$$
+
+Los dos primeros términos miden la auto-similitud dentro de cada grupo y el
+tercero la similitud cruzada; cuando ambas distribuciones coinciden, los tres se
+cancelan. Propiedades clave para usarla como penalización:
+
+- **$\operatorname{MMD}^2 = 0$ si y solo si** las dos distribuciones de score
+  coinciden (con kernel característico), no solo sus medias —es por tanto una
+  exigencia de **paridad estadística** plena, no de mera igualdad de medias.
+- **No se diluye con el desbalance**: apunta justo a la diferencia entre los dos
+  grupos, así que para $S$ binaria es más nítida que HSIC (que reparte su masa
+  sobre "cualquier" dependencia y casi no se mueve).
+- Es **diferenciable** (solo `matmul`s sobre el kernel RBF de las predicciones)
+  y, gracias a los pesos $w_1,w_0$, no necesita enmascarar por grupo, así que
+  encaja en el grafo de Keras/TF como término de coste.
+
+Así, en la escalera: corr² ve solo el desplazamiento de **medias** (lineal),
+HSIC ve **cualquier** dependencia genérica, y MMD —entre ambas para el caso
+binario— compara las **distribuciones enteras** de los dos grupos, que es
+precisamente lo que "no discriminar por género" exige
+(`src/fair_loss.py`, `dependence_mmd`).
+
 #### (c) CKA — HSIC normalizado (la elección práctica)
 
 El HSIC en crudo lleva las unidades del kernel al cuadrado: su escala depende del
@@ -408,6 +454,17 @@ Hay una tensión que el propio material resuelve:
 > El caso `lab-jobB-neutralize-credit.qmd` es prácticamente el mismo problema
 > (modelo que descarta el atributo protegido, demuestra la fuga vía proxies, y
 > neutraliza el resultado) y usa exactamente este esquema.
+
+> **Lo que pasó en la práctica (NB06).** Se compararon en pie de igualdad las
+> **tres** medidas —corr², HSIC y MMD— barriendo $\lambda$ con cada una y
+> eligiendo el compromiso por **presupuesto de AUC en validación**. Para
+> `CODE_GENDER` (binaria) ganó **corr²**: con el mismo presupuesto de pérdida de
+> precisión, la penalización lineal sobre la diferencia de medias es la que más
+> reduce el group gap, mientras que HSIC se diluye con el desbalance y la mayor
+> expresividad de MMD no compensa su coste para una sensible binaria. La MMD
+> sigue siendo la medida conceptualmente *a medida* del caso binario (compara
+> las distribuciones enteras), pero aquí la diferencia entre grupos es
+> esencialmente un desplazamiento de medias que corr² ya captura.
 
 ### Cómo barrer λ para la curva de Pareto
 

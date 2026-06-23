@@ -44,7 +44,7 @@ El contrato de datos `(X, y, s)` y las decisiones de preprocesado (`D-P.*`) qued
 | `02_preprocesado.ipynb` | Pipeline sin fuga, contrato `(X, y, s)`, decisiones `D-P.1`–`D-P.7` | ✅ completo |
 | `03_modelo_base.ipynb` | Modelo base sin FAIR (referencia "base vs mejor FAIR", E5; decisiones `D-MB.1`–`D-MB.5`) | ✅ completo |
 | `04_tarea1_capa_custom.ipynb` | **Tarea 1** — capa custom del ratio de endeudamiento (`D-1.x`) | ✅ implementado |
-| `05_tarea2_fair_loss.ipynb` | **Tarea 2** — FAIR loss; produce la tabla E5 (`D-2.x`) | 🟡 esqueleto |
+| `05_tarea2_fair_loss.ipynb` | **Tarea 2** — FAIR loss con 3 medidas (`corr²`/HSIC/MMD); produce la tabla E5 (`D-2.x`) | ✅ implementado |
 | `06_tarea3_keras_tuner.ipynb` | **Tarea 3** — AutoML / Keras Tuner; produce la Pareto E2 (`D-3.x`) | ✅ implementado |
 | `07_tarea4_incertidumbre.ipynb` | **Tarea 4** — clase + varianza; produce E3 (`D-4.x`) | 🟡 esqueleto |
 
@@ -53,9 +53,17 @@ El contrato de datos `(X, y, s)` y las decisiones de preprocesado (`D-P.*`) qued
 > (carga `(X, y, s)`, rutas de `results/`, formato del bloque de decisiones, paleta y mapa de
 > entregables E1–E5) están en [`CONVENCIONES_MODELADO.md`](CONVENCIONES_MODELADO.md).
 >
+> **Tarea 3 (06) terminada e integrada con la FAIR loss real (05):** Keras Tuner
+> (RandomSearch ≈ Hyperband → RandomSearch) fija el backbone (1×64, dropout 0.3, relu,
+> `lr ≈ 0.0072`) sobre la capa custom DTI (04); la frontera de Pareto compara las 3 medidas
+> y el compromiso por presupuesto de AUC es **`corr²`, `λ*=5`** → **−72 % de group gap**
+> (5.615 → 1.568 pp) por **−0.59 pp de AUC** (0.7404 → 0.7345) en test. El modelo de compromiso
+> queda persistido en `data/models/06_modelo_compromiso.*` y los artefactos en
+> `results/{figures,tables}/06_tuner__*`.
+>
 > Dependencias clave: **03** (base) alimenta la tabla E5 de **05** y la comparación de **06**/**07**;
 > el **dropout** del espacio de búsqueda de **06** (`D-3.2`) es la palanca que **07** reutiliza para
-> MC-Dropout (`D-4.1`).
+> MC-Dropout (`D-4.1`) sobre `data/models/06_modelo_compromiso.*`.
 
 ## Decisiones de diseño
 

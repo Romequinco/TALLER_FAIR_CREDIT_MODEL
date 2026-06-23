@@ -108,8 +108,37 @@ bloque y descripción; descripción en `snake_case` sin acentos.
 | **03 base** | `03_base__curva_loss.png`, `03_base__roc_test.png` | `03_base__metricas_test.csv` |
 | **04 custom** | `04_custom__curva_loss.png`, `04_custom__exponentes_p_aprendidos.png` | `04_custom__metricas_test.csv` |
 | **05 fair** | `05_fair__curva_loss.png`, `05_fair__group_gap_vs_lambda.png` | `05_fair__base_vs_mejor_fair.csv`, `05_fair__barrido_lambda.csv` |
-| **06 tuner** | `06_tuner__pareto_auc_vs_gap.png`, `06_tuner__curva_loss_mejor.png` | `06_tuner__trials.csv`, `06_tuner__pareto_puntos.csv` |
+| **06 tuner** | `06_tuner__pareto_auc_vs_gap.png` (E2 oficial), `06_tuner__pareto_dependencia.png` (E2 literal), `06_tuner__curva_loss_mejor.png`, `06_tuner__curvas_loss_lambda.png` (E4) | `06_tuner__pareto_puntos.csv`, `06_tuner__trials.csv`, `06_tuner__base_vs_mejor_fair.csv` (E5) |
 | **07 incert** | `07_incert__varianza_buen_vs_mal_pagador.png`, `07_incert__varianza_vs_n_ext_missing.png` | `07_incert__incertidumbre_test.csv` |
+
+> **Inventario completo del NB06** (Tarea 3, terminada e iterada — la tabla de arriba
+> solo muestra los artefactos cabecera). El notebook produce ahora:
+>
+> *Figuras* (`results/figures/`):
+> - `06_tuner__pareto_auc_vs_gap.png` — **E2 oficial**: Pareto del tuner (topología
+>   variable, medida `corr²`), eje Y = AUC, eje X = `|group gap|`.
+> - `06_tuner__pareto_dependencia.png` — **E2 literal**: eje X = `D(ŷ, género)`, la
+>   dependencia que de verdad penaliza la loss (lo que el enunciado pide minimizar).
+> - `06_tuner__pareto_3medidas.png` — comparación de las **3 medidas** (`corr²`/`HSIC`/`MMD`)
+>   sobre backbone fijo, con la **estrella del compromiso** elegido.
+> - `06_tuner__pareto_limpia_semillas.png` — Pareto limpia `corr²` con **barras de error
+>   multi-semilla** (topología fija, aísla el efecto de λ del ruido de entrenamiento).
+> - `06_tuner__equalized_odds_base_vs_fair.png` — barras `ΔTPR`/`ΔFPR` base vs FAIR.
+> - `06_tuner__curva_loss_mejor.png` — **E4**: convergencia del modelo de compromiso.
+> - `06_tuner__curvas_loss_lambda.png` — **E4**: panel de convergencia de todos los λ del barrido.
+>
+> *Tablas* (`results/tables/`):
+> - `06_tuner__pareto_puntos.csv` — puntos del frente.
+> - `06_tuner__barrido_3medidas_seeds.csv` — barrido por medida y λ con `dep_mean`/`dep_std`,
+>   `gap`, `auc`, `ΔTPR`/`ΔFPR`.
+> - `06_tuner__pareto_limpio_seeds.csv` — barrido `corr²` topología fija multi-semilla.
+> - `06_tuner__trials.csv` — `hp_values` completos, `measure`, estrategia de cada trial.
+> - `06_tuner__base_vs_mejor_fair.csv` — **E5**: base 03 + base tuner (λ=0) + mejor FAIR,
+>   con group gap y equalized-odds.
+>
+> *Modelo (handoff a la Tarea 4)* (`data/models/`):
+> - `06_modelo_compromiso.weights.h5` + `.json` (backbone, `lambda_star`, `measure_star`,
+>   `fair_source`). **Compromiso elegido: medida `corr²`, λ\* = 5.**
 
 > Nota: la tabla **"base vs mejor FAIR en test"** (entregable obligatorio) la produce el
 > notebook **05** (`05_fair__base_vs_mejor_fair.csv`), porque necesita ambos números a la
@@ -245,8 +274,8 @@ TAB_DIR  = Path("../results/tables");  TAB_DIR.mkdir(parents=True, exist_ok=True
 | **03** `modelo_base` | — (referencia) | **E5 (parte base)**, E4 (loss base), E1 | — (sin módulo propio; utilidades comunes: build MLP, métricas) | preprocesado |
 | **04** `tarea1_capa_custom` | Tarea 1 | E1, E4; restricción matemática de la capa (presentación) | `custom_layers.py` | 03 (arquitectura/baseline) |
 | **05** `tarea2_fair_loss` | Tarea 2 | **E5 (tabla base vs mejor FAIR, completa)**, E4, group gap; métrica de dependencia (presentación) | `fair_loss.py` | **03 (base como referencia)**, 04 (capa, opcional) |
-| **06** `tarea3_keras_tuner` | Tarea 3 | **E2 (Pareto AUC vs gap)**, E4, E1 | `tuning.py` | 04+05 (capa + FAIR loss en el `build_model`) |
-| **07** `tarea4_incertidumbre` | Tarea 4 | **E3 (varianza buen vs mal pagador)**, varianza↔`EXT_SOURCE`, E1 | `uncertainty.py` | **06 (topología + dropout del tuner)** |
+| **06** `tarea3_keras_tuner` | Tarea 3 | **E2 (Pareto AUC vs gap + variante dependencia)**, E4 (loss del compromiso y panel por λ), **E5 (su propia tabla base vs mejor FAIR)**, E1 | `tuning.py` | 04+05 (capa custom + **FAIR loss REAL de la T2** en el `build_model`) |
+| **07** `tarea4_incertidumbre` | Tarea 4 | **E3 (varianza buen vs mal pagador)**, varianza↔`EXT_SOURCE`, E1 | `uncertainty.py` | **06 (topología + dropout + modelo de compromiso `data/models/06_modelo_compromiso.*`)** |
 
 **Dependencias clave a respetar:**
 
@@ -256,24 +285,36 @@ TAB_DIR  = Path("../results/tables");  TAB_DIR.mkdir(parents=True, exist_ok=True
    lo usan como punto de comparación de precisión.
 
 2. **Cruce D-4.1 (MC-Dropout, Tarea 4) ↔ D-3.2 (dropout en el espacio de búsqueda,
-   Tarea 3).** El **dropout es la palanca compartida**: el tuner (06) incluye `dropout` y su
-   `rate` en el espacio de búsqueda **sí o sí** (D-3.2) **porque** la Tarea 4 (07) lo reutiliza
-   para **MC-Dropout** (`training=True` en inferencia, T pasadas → `Var[p]`, D-4.1). Es decir,
-   07 **hereda la topología con dropout** que 06 deja fijada; no introduce un dropout nuevo
-   desacoplado.
+   Tarea 3) — VIGENTE.** El **dropout es la palanca compartida**: el tuner (06) incluye
+   `dropout` y su `rate` en el espacio de búsqueda **sí o sí** (D-3.2, ver `make_build_model`
+   en `tuning.py`) **porque** la Tarea 4 (07) lo reutiliza para **MC-Dropout** (`training=True`
+   en inferencia, T pasadas → `Var[p]`, D-4.1). Es decir, 07 **hereda la topología con dropout**
+   que 06 deja fijada y **carga `data/models/06_modelo_compromiso.weights.h5` + `.json`**
+   (backbone + `lambda_star`/`measure_star`/`fair_source`) como punto de partida del MC-Dropout;
+   no introduce un dropout nuevo desacoplado.
 
-3. **Mapa `src/` ↔ tarea:** `custom_layers.py`↔04, `fair_loss.py`↔05, `tuning.py`↔06,
+3. **El NB06 consume la FAIR loss REAL de la Tarea 2 (no el fallback).** `tuning.py` toma la
+   medida de dependencia (`corr²`/`HSIC`/`MMD`) directamente del registro
+   `src.fair_loss.DEPENDENCE_MEASURES` (Tarea 2 ya entregada y verificada) vía `resolve_fair_loss`,
+   y la combina con su BCE ponderada por clases. El **fallback local `corr2_dependency`** queda
+   solo como red de seguridad si `src/fair_loss.py` no estuviera disponible; en condiciones
+   normales `fair_source = "src.fair_loss:<measure>"`, no `"fallback:corr2"`. El **compromiso
+   elegido** para el handoff es **medida `corr²`, λ\* = 5**.
+
+4. **Mapa `src/` ↔ tarea:** `custom_layers.py`↔04, `fair_loss.py`↔05, `tuning.py`↔06,
    `uncertainty.py`↔07. El **03 base no tiene módulo propio**: define un MLP estándar y
    utilidades comunes (construcción del modelo, cálculo de AUC/accuracy, group gap) que las
    demás tareas reutilizan.
 
 **¿Algún entregable obligatorio se queda sin notebook?** No. Cobertura completa:
 
-- E1 → todos (03–07).  E2 → 06.  E3 → 07.  E5 → 03 (base) + 05 (tabla).
+- E1 → todos (03–07).  E2 → 06.  E3 → 07.  E5 → 03 (base) + 05 (tabla oficial) + 06
+  (su propia `06_tuner__base_vs_mejor_fair.csv`: base 03 + base tuner λ=0 + mejor FAIR).
 - **E4 (curvas de loss "para cada entrenamiento final")** es **transversal**: lo deben
-  producir **todos** los notebooks que entrenen un modelo final (03, 04, 05, 06 —al menos el
-  mejor trial—, 07). **Aviso para las siguientes tandas:** no olvidar guardar la curva de loss
-  en cada notebook; es el entregable más fácil de dejarse huérfano por ser repetitivo.
+  producir **todos** los notebooks que entrenen un modelo final (03, 04, 05, 06 —`curva_loss_mejor`
+  del compromiso + `curvas_loss_lambda` con el panel de todo el barrido—, 07). **Aviso para las
+  siguientes tandas:** no olvidar guardar la curva de loss en cada notebook; es el entregable más
+  fácil de dejarse huérfano por ser repetitivo.
 - Los tres puntos de la **presentación** quedan cubiertos por 04 (restricción matemática),
   05 (métrica de dependencia), 06 (análisis Pareto) y 07 (reflexión incertidumbre).
 

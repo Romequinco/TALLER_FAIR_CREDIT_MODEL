@@ -1,0 +1,4 @@
+modelo,medida,lambda,AUC_test,group_gap_test_pp,dTPR_test_pp,dFPR_test_pp,mejor
+base 03 (MLP sin FAIR),-,-,0.7437,5.358,,,
+"base tuner (λ=0, +capa custom)",-,0.0,0.7404,5.615,8.282,11.076,
+mejor FAIR,corr2,5.0,0.7345,1.568,1.817,3.349,  <== MEJOR (remarcar en test)

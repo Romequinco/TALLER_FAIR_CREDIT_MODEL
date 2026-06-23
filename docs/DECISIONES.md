@@ -110,8 +110,16 @@ Fuente de huecos: [`docs/teoria/02-fair-loss.md`](teoria/02-fair-loss.md) §5 y
   dependencia relevante es esencialmente un desplazamiento de medias, y CKA "apenas registra" (~0,02);
   por eso la penalización con correlación/HSIC es suficiente **y la métrica que se *reporta* es el group
   gap** (ver D-2.3). MI se descarta como término de loss (cara, ávida de datos, no diferenciable directa).
-- **Estado:** Propuesta
-- **Decidido por / fecha:** _(pendiente)_
+- **Resolución (2026-06-23):** ya **no** se elige una sola medida a priori: `src/fair_loss.py` entrega las
+  **tres** medidas diferenciables en el registro `DEPENDENCE_MEASURES` (`corr2` lineal, `hsic` kernel
+  genérico, `mmd²` dos-muestras a medida para `S` binaria) y el **NB06 las ENFRENTA sobre el mismo backbone**
+  en la frontera de Pareto (cada una con su propia rejilla de λ, porque la escala de `D` difiere:
+  corr²∈[0,1], MMD²~[0,0.1], HSIC~[0,0.02]). **Elegida por presupuesto: `corr²`** — para `S` binaria captura
+  el desplazamiento de medias que es justo lo que mueve el group gap, es O(n) (las kernel HSIC/MMD exigen
+  matrices n×n, inviables en val completo de 46k sin submuestreo) y empata en calidad. HSIC/MMD quedan
+  enchufadas y comparadas como evidencia, no descartadas.
+- **Estado:** **Resuelta** *(corr² elegida; HSIC/MMD comparadas)*
+- **Decidido por / fecha:** Oscar / 2026-06-23
 
 ### D-2.2 · Forma de combinar ajuste + penalización
 - **Decisión:** estructura de la loss total.
@@ -168,7 +176,12 @@ Fuente de huecos: [`docs/teoria/02-fair-loss.md`](teoria/02-fair-loss.md) §5 y
   que el estimador de dependencia no sea ruidoso (el ejemplo de Sharpe del profe opera sobre el batch
   completo, [T2] §3). **No hay evidencia en el EDA** sobre el tamaño óptimo concreto → fijar por prueba
   y marcar **Revisar**.
-- **Estado:** Abierta (proponer valor tras pruebas)
+- **Estado actual (2026-06-23):** **SIGUE ABIERTA.** Limitación declarada del entregado: las medidas kernel
+  de `src/fair_loss.py` (`hsic`, `mmd`) usan **σ por defecto fijo** (`sigma_y=0.1`, `sigma_s=0.5`, `mmd
+  sigma=0.15`), **sin** la heurística de la mediana de las distancias por pares. No afecta al compromiso
+  final (la medida elegida fue `corr²`, que no usa σ), pero un ajuste fino de HSIC/MMD requeriría
+  implementar la heurística de la mediana → pendiente.
+- **Estado:** Abierta (σ por defecto; heurística de la mediana pendiente)
 - **Decidido por / fecha:** _(pendiente)_
 
 ---
@@ -178,17 +191,19 @@ Fuente de huecos: [`docs/teoria/02-fair-loss.md`](teoria/02-fair-loss.md) §5 y
 Fuente de huecos: [`docs/teoria/03-keras-tuner.md`](teoria/03-keras-tuner.md) §5.
 Implementación: [`src/tuning.py`](../src/tuning.py) + [`notebooks/06_tarea3_keras_tuner.ipynb`](../notebooks/06_tarea3_keras_tuner.ipynb).
 
-> **Resultado de la ejecución (2026-06-22).** Frontera de Pareto **AUC vs |group gap|** barriendo
-> `λ ∈ {0, 0.5, 1, 2, 5}`. Para evitar confundir el efecto del fairness con el de la topología, además
-> del barrido del tuner se hace un **barrido LIMPIO con topología fija (backbone de mayor AUC) y 3
-> semillas** (media ± std). **Compromiso elegido: λ\*=0.5** sobre el backbone `1 capa · 80 u · dropout 0.3
-> · lr 6.7e-3 · relu`. **Precio de la justicia en test:** `λ=0` AUC 0.7407 / gap +5.73 pp → `λ*=0.5`
-> AUC 0.7407 / gap +3.77 pp, es decir **ΔAUC ≈ 0 (dentro de 1σ) reduciendo el gap ~34 %**. La
-> dependencia usada es el **fallback `corr²`** (la HSIC de D-2.1 aún no entregada en `src/fair_loss.py`);
-> el diseño es **enchufable** y las figuras se marcan *preliminar*. Modelo persistido para el NB07 en
-> `data/models/06_modelo_compromiso.*` (cruce D-3.2 ↔ D-4.1). Entregables: `results/figures/06_tuner__pareto_auc_vs_gap.png`
-> (tuner), `06_tuner__pareto_limpia_semillas.png` (limpia con barras de error), `06_tuner__curva_loss_mejor.png`;
-> tablas `06_tuner__trials.csv`, `06_tuner__pareto_limpio_seeds.csv`.
+> **Resultado de la ejecución (2026-06-23).** Frontera de Pareto **AUC vs |group gap|** comparando las
+> **tres** medidas de dependencia (`corr²`, `hsic`, `mmd²`) de `src/fair_loss.py` sobre el **mismo backbone**,
+> cada una con su propia rejilla de λ (D-2.1 resuelta). Para no confundir el efecto del fairness con el de la
+> topología, además del barrido del tuner se hace un **barrido LIMPIO con topología fija (backbone de mayor
+> AUC) y 3 semillas** (media ± std). **Compromiso elegido por presupuesto: medida `corr²`, λ\*=5** sobre el
+> backbone `1 capa · 64 u · dropout 0.3 · relu`. **Precio de la justicia en test:** la base 03 (MLP sin FAIR)
+> da AUC **0.7437** / gap **5.36 pp**; la base del tuner `λ=0` AUC **0.7404** / gap **5.615 pp**; el **mejor
+> FAIR** AUC **0.7345** / gap **1.568 pp**, es decir **−72 % de group gap a cambio de −0.59 pp de AUC**.
+> En equalized-odds (ΔTPR/ΔFPR) baja **8.28→1.82 pp** y **11.08→3.35 pp**. La dependencia ya NO es un
+> fallback: `src/tuning.py::resolve_fair_loss` toma la medida **real** de `src.fair_loss.DEPENDENCE_MEASURES`.
+> Modelo persistido para el NB07 en `data/models/06_modelo_compromiso.*` (cruce D-3.2 ↔ D-4.1). Entregables:
+> `results/figures/06_tuner__pareto_auc_vs_gap.png` (tuner), `06_tuner__pareto_limpia_semillas.png` (limpia con
+> barras de error), `06_tuner__curva_loss_mejor.png`; tablas `06_tuner__trials.csv`, `06_tuner__pareto_limpio_seeds.csv`.
 
 ### D-3.1 · Estrategia de búsqueda
 - **Decisión:** qué tuner usar.
@@ -196,11 +211,12 @@ Implementación: [`src/tuning.py`](../src/tuning.py) + [`notebooks/06_tarea3_ker
 - **Propuesta:** **Hyperband** (o RandomSearch como base), porque la propia charla del profe avisa de
   que en NAS lo sofisticado "no funciona mucho mejor que random" ([T3] §2), y Hyperband exprime mejor el
   presupuesto descartando configuraciones malas pronto. Bayesiana queda como alternativa si sobra tiempo.
-- **Resultado (2026-06-22):** se compararon **Hyperband vs RandomSearch** en λ=1.0 → **empate técnico**
-  (Δval_auc ≈ 0.0000 < 0.001). Se usa **Hyperband** por la propuesta por defecto, dejando constancia de que
-  RandomSearch sería igual de válido y ~2× más barato (la teoría lo respalda).
+- **Resultado (2026-06-23):** se compararon **Hyperband vs RandomSearch** en λ=1.0 → **empate técnico**
+  (Δval_auc < 0.001). Como la teoría avisa de que en NAS lo sofisticado no bate a random ([T3] §2), se usa
+  **RandomSearch** por ser **igual de válido y más barato** que Hyperband (no hay ganancia que justifique el
+  coste extra del segundo).
 - **Estado:** **Confirmada** *(implementación; pendiente ratificar en grupo)*
-- **Decidido por / fecha:** Oscar / 2026-06-22
+- **Decidido por / fecha:** Oscar / 2026-06-23
 
 ### D-3.2 · Hiperparámetros del espacio de búsqueda
 - **Decisión:** qué se busca.
@@ -239,6 +255,22 @@ Implementación: [`src/tuning.py`](../src/tuning.py) + [`notebooks/06_tarea3_ker
   `SlicedAUC` que desempaqueta `y_true=[y,s]` (D-2.5) para medir AUC solo contra `y`. Confirmado.
 - **Estado:** **Confirmada** *(implementación; pendiente ratificar en grupo)*
 - **Decidido por / fecha:** Oscar / 2026-06-22
+
+### D-3.5 · Integración T2 ↔ T3 (la FAIR loss real dentro del tuner)
+- **Decisión:** cómo enchufa el AutoML de la Tarea 3 la FAIR loss **real** de la Tarea 2 (no un sustituto).
+- **Problema detectado:** `src/tuning.py` importaba un símbolo inexistente (`fair_loss`) y por eso **caía
+  siempre al fallback local `corr²`**, dejando HSIC/MMD sin usar y rompiendo la comparación de medidas (D-2.1).
+- **Resolución (2026-06-23):** `src/tuning.py::resolve_fair_loss(lam, measure, w0, w1)` toma ahora la medida
+  **real** del registro `src.fair_loss.DEPENDENCE_MEASURES` (`corr2`/`hsic`/`mmd`) y solo cae al fallback si el
+  módulo no está disponible (devuelve la fuente `"src.fair_loss:<measure>"` o `"fallback:corr2"` para auditar).
+  La **BCE ponderada por clases propia** (balanceo D-MB.3, incompatible con `class_weight` por el `y_true=[y,s]`
+  empaquetado) es **idéntica para toda medida** → el término de ajuste no cambia entre medidas; lo que cambia es
+  la **escala de `D`**, por lo que cada medida usa su **propia rejilla de λ**. Se añadió `dep_value(p, s,
+  measure)` para reportar la **dependencia literal `D(ŷ,s)`** (lo que de verdad se minimiza) en el **eje X del
+  Pareto**, distinta del group gap que se reporta (D-2.3); para los kernels (HSIC/MMD) submuestrea a `n_max=4096`
+  porque la matriz n×n es inviable en val completo (46k).
+- **Estado:** **Confirmada** *(implementación; pendiente ratificar en grupo)*
+- **Decidido por / fecha:** Oscar / 2026-06-23
 
 ---
 
@@ -493,17 +525,24 @@ y `results/tables/03_base__metricas_test.csv` (parte base de E5).
 | Sección | Fichas | Propuesta | Confirmada | Revisar | Abierta |
 | --- | --- | --- | --- | --- | --- |
 | Tarea 1 — Capa custom | 6 | 6 | 0 | 0 | 0 |
-| Tarea 2 — FAIR loss | 7 | 6 | 0 | 0 | 1 (D-2.7) |
-| Tarea 3 — Keras Tuner | 4 | 0 | 4 | 0 | 0 |
+| Tarea 2 — FAIR loss | 7 | 5 | 1 (D-2.1 Resuelta) | 0 | 1 (D-2.7) |
+| Tarea 3 — Keras Tuner | 5 | 0 | 5 | 0 | 0 |
 | Tarea 4 — Incertidumbre | 5 | 3 | 0 | 0 | 2 (D-4.2, D-4.4) |
 | Preprocesado | 7 | 0 | 7 | 0 | 0 |
 | Modelo base (NB 03) | 5 | 0 | 5 | 0 | 0 |
-| **Total** | **34** | **15** | **16** | **0** | **3** |
+| **Total** | **35** | **14** | **18** | **0** | **3** |
 
-> **Tarea 3 confirmada (implementación, 2026-06-22):** las 4 fichas D-3.1–D-3.4 quedan implementadas y
+> **Tarea 3 confirmada (implementación, 2026-06-23):** las **5** fichas D-3.1–D-3.5 quedan implementadas y
 > validadas por ejecución (ver el bloque de resultado al inicio de la sección). Marcadas **Confirmada
-> (implementación)** a falta de ratificación formal del grupo. La dependencia FAIR usada es el fallback
-> `corr²` porque la HSIC de la Tarea 2 (D-2.1) aún no está entregada; al enchufarla, re-ejecutar el NB06.
+> (implementación)** a falta de ratificación formal del grupo. Correcciones de esta tanda: **D-3.1 usa
+> `RandomSearch`** (empate técnico con Hyperband, se elige por ser más barata) y la **integración T2↔T3
+> (D-3.5)** hace que el tuner use la **FAIR loss real** de `src.fair_loss.DEPENDENCE_MEASURES` (antes caía
+> a un fallback `corr²` por un import roto). El compromiso final usa la medida **`corr²`** con **λ\*=5**.
+
+> **D-2.1 resuelta (2026-06-23):** se comparan las **tres** medidas (`corr²`/`hsic`/`mmd²`) de
+> `src/fair_loss.py` sobre el mismo backbone en el NB06 y se elige **`corr²` por presupuesto**. **D-2.7
+> sigue ABIERTA**: las kernel HSIC/MMD usan σ por defecto, sin la heurística de la mediana (no afecta al
+> compromiso, que usa `corr²`).
 
 **Preprocesado validado por el grupo:** las **7** fichas (D-P.1 a D-P.7) están **Confirmadas**; ya no queda
 ninguna en **Revisar**. D-P.2 quedó **Confirmada (2026-06-20)** tras el experimento de AUC en validación, que
