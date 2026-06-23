@@ -57,8 +57,8 @@ docs/_fuentes/clases-master/Lectura_datos_Taller_B4_T1.ipynb
 ```
 
 ⚠️ Esa carpeta (`docs/_fuentes/`) está **ignorada por git** (material de clase, no se
-versiona). Cuando empiece la implementación, conviene **copiar una versión limpia** del
-notebook a `notebooks/` (que sí se versiona) y trabajar desde ahí.
+versiona). La implementación ya se hizo: a partir de ese esqueleto se construyó el pipeline
+versionado en `notebooks/` (01–07), que es desde donde se trabaja.
 
 ## ¿Descarga automatizada desde Kaggle?
 

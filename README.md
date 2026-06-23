@@ -42,8 +42,8 @@ centrado en perfiles con poco historial crediticio.
 
 ## Estado del proyecto (2026-06-23)
 
-Trabajo hecho y lo que falta. El registro completo de decisiones de diseño está en
-[`docs/DECISIONES.md`](docs/DECISIONES.md).
+**Las 4 tareas están cerradas y ejecutadas** (notebooks 01–07). El registro completo de
+decisiones de diseño está en [`docs/DECISIONES.md`](docs/DECISIONES.md).
 
 - ✅ **Andamiaje del repo y teoría.** Documentación por tarea en
   [`docs/teoria/`](docs/teoria/) (seis documentos: uno por cada una de las 4 tareas +
@@ -82,9 +82,12 @@ Trabajo hecho y lo que falta. El registro completo de decisiones de diseño est�
   *equalized-odds* también mejora (ΔTPR 8.28 → 1.82, ΔFPR 11.08 → 3.35). Modelo de compromiso persistido para la
   Tarea 4 (MC-Dropout) en [`data/models/06_modelo_compromiso.{weights.h5,json}`](data/models/). Artefactos en
   `results/figures/` y `results/tables/` con prefijo **`06_tuner__`**. Decisiones `D-3.1`–`D-3.4` **Confirmadas**.
-- 🟡 **Tarea 4 — Incertidumbre pendiente** ([`notebooks/07_tarea4_incertidumbre.ipynb`](notebooks/07_tarea4_incertidumbre.ipynb),
+- ✅ **Tarea 4 — Incertidumbre terminada** ([`notebooks/07_tarea4_incertidumbre.ipynb`](notebooks/07_tarea4_incertidumbre.ipynb),
   [`src/uncertainty.py`](src/uncertainty.py)): hereda el modelo de compromiso del 06 (`data/models/06_modelo_compromiso.*`,
-  con dropout 0.3) para MC-Dropout; decisiones `D-4.x` en **Propuesta/Abierta**.
+  con dropout 0.3) y produce **clase + varianza** por **MC-Dropout** (T=100, sin coste de AUC) más el **2º modelo del
+  error** `|p−y|` (entrega base). Entregable **E3** (varianza buen vs mal pagador) + cruce **D-4.3** con `N_EXT_MISSING`
+  (la varianza sube **+47 %** cuando faltan las 3 fuentes externas), calibración/alarma y τ por coste. Artefactos
+  `results/.../07_incert__*`. Decisiones `D-4.1`–`D-4.5` **Confirmadas**.
 
 ## Estructura del repositorio
 
@@ -112,12 +115,12 @@ taller-b4-t1-fairness/
 │   ├── 04_tarea1_capa_custom.ipynb   # Tarea 1 — capa custom del ratio — ✅ implementado
 │   ├── 05_tarea2_fair_loss.ipynb     # Tarea 2 — FAIR loss 3 medidas (tabla E5) — ✅ implementado
 │   ├── 06_tarea3_keras_tuner.ipynb   # Tarea 3 — Keras Tuner + Pareto E2 — ✅ implementado
-│   └── 07_tarea4_incertidumbre.ipynb # Tarea 4 — clase + varianza (E3) — 🟡 esqueleto
+│   └── 07_tarea4_incertidumbre.ipynb # Tarea 4 — clase + varianza (E3) — ✅ implementado
 ├── src/                   # Código fuente del proyecto
 │   ├── custom_layers.py   # Tarea 1 — capa del ratio de endeudamiento — ✅
 │   ├── fair_loss.py       # Tarea 2 — FAIR loss con 3 medidas (corr²/HSIC/MMD) — ✅
 │   ├── tuning.py          # Tarea 3 — búsqueda de topología (Keras Tuner) — ✅
-│   └── uncertainty.py     # Tarea 4 — predicción con clase + varianza — 🟡
+│   └── uncertainty.py     # Tarea 4 — clase + varianza (mc_dropout_predict, estabilidad_T, aleatoric_bernoulli, calibracion_por_cuantil, build_error_model) — ✅
 ├── results/               # Salidas reproducibles del código
 │   ├── figures/           # Gráficas (Pareto 3 medidas, equalized-odds, curvas de loss)
 │   └── tables/            # Tablas (Pareto, barridos por semilla, base vs. mejor FAIR)
@@ -158,7 +161,7 @@ Cada notebook consume las salidas del anterior; respeta el orden:
 | 04 | `04_tarea1_capa_custom.ipynb` | Capa custom DTI integrada en el MLP |
 | 05 | `05_tarea2_fair_loss.ipynb` | FAIR loss (3 medidas) + tabla E5 |
 | 06 | `06_tarea3_keras_tuner.ipynb` | Keras Tuner + frontera de Pareto; persiste `data/models/06_modelo_compromiso.*` y artefactos `results/.../06_tuner__*` |
-| 07 | `07_tarea4_incertidumbre.ipynb` | (🟡 pendiente) MC-Dropout sobre el modelo de compromiso del 06 |
+| 07 | `07_tarea4_incertidumbre.ipynb` | Incertidumbre (E3): MC-Dropout (T=100) sobre el modelo de compromiso heredado del 06 (sin coste de AUC) + 2º modelo del error `|p−y|`; varianza buen vs mal pagador (salen casi iguales); cruce `N_EXT_MISSING` (+47 % solo en el extremo sin las 3 fuentes externas, n=27, Spearman global ≈0). Artefactos `results/.../07_incert__*` (p. ej. `07_incert__incertidumbre_test.csv`) |
 
 ```bash
 jupyter lab    # abrir y ejecutar los notebooks de notebooks/ en orden

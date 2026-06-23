@@ -164,33 +164,36 @@ df_resultados.to_csv(TAB_DIR / "05_fair__base_vs_mejor_fair.csv", index=False)
 
 Cada notebook **abre** (celda markdown nº 0, justo bajo el título) con una tabla que
 replica el estilo de la celda 0 de `02_preprocesado.ipynb`. Copia **solo las fichas de su
-tarea** desde `docs/DECISIONES.md`, con su **ESTADO REAL** y un aviso de validación con el
-grupo. A diferencia del preprocesado (todo **Confirmada**), las decisiones de modelado
-están en **Propuesta/Abierta** → hay que validarlas con el grupo **antes de escribir código**.
+tarea** desde `docs/DECISIONES.md`, con su **ESTADO REAL**. Esas decisiones **ya se tomaron
+y están registradas en `docs/DECISIONES.md`**: tras ejecutar las cuatro tareas, la inmensa
+mayoría quedó **Confirmada** (o **Resuelta**, como D-2.1), y solo **D-2.7** sigue **Abierta**
+(σ del kernel HSIC/MMD, que no afecta al compromiso final con `corr²`). El código ya está
+escrito y ejecutado; el bloque (c) **documenta** el estado en que cerró cada ficha, no abre
+una validación previa.
 
 **Plantilla exacta:**
 
 ```markdown
-## Decisiones a tomar antes de empezar
+## Decisiones de esta tarea (estado real)
 
 > Fichas de `docs/DECISIONES.md` para esta tarea. **Estado real** copiado tal cual.
-> Las decisiones en **Propuesta**/**Abierta** se **validan con el grupo ANTES de
-> implementar**: este notebook asume la *Propuesta* por defecto, pero es revisable.
+> Las decisiones ya se tomaron y se ejecutaron; casi todas quedan **Confirmada**
+> (o **Resuelta**). Si alguna sigue **Abierta**, se indica la limitación declarada.
 
 | Decisión | Opciones | Estado |
 |---|---|---|
-| **D-x.1** · <título corto> | <opción A> / <opción B> / ... | Propuesta |
+| **D-x.1** · <título corto> | <opción A> / <opción B> / ... | Confirmada |
 | **D-x.2** · <título corto> | <opción A> / <opción B> / ... | Abierta |
 ```
 
 **Ejemplo de fila real (Tarea 1, ficha D-1.1):**
 
 ```markdown
-| **D-1.1** · Columnas del ratio de endeudamiento | (a) AMT_ANNUITY/AMT_INCOME_TOTAL (DTI) / (b) AMT_CREDIT/AMT_INCOME_TOTAL / (c) varios ratios | Propuesta |
+| **D-1.1** · Columnas del ratio de endeudamiento | (a) AMT_ANNUITY/AMT_INCOME_TOTAL (DTI) / (b) AMT_CREDIT/AMT_INCOME_TOTAL / (c) varios ratios | Confirmada |
 ```
 
 Estados válidos (idénticos a `DECISIONES.md`): **Propuesta**, **Confirmada**,
-**Revisar**, **Abierta**. Citar el código de ficha (`D-1.1`, `D-2.3`, …) sin renombrar.
+**Resuelta**, **Revisar**, **Abierta**. Citar el código de ficha (`D-1.1`, `D-2.3`, …) sin renombrar.
 
 ---
 
@@ -325,51 +328,54 @@ TAB_DIR  = Path("../results/tables");  TAB_DIR.mkdir(parents=True, exist_ok=True
 Para que cada notebook copie su bloque (c) **sin error**. Estados verificados contra
 `docs/DECISIONES.md` y su "Resumen de estados".
 
-**Tarea 1 — Capa custom (NB 04)** — 6 fichas, **todas Propuesta**:
+**Tarea 1 — Capa custom (NB 04)** — 6 fichas, **todas Confirmada** (NB04, 2026-06-23):
 
 | Ficha | Título | Estado |
 |---|---|---|
-| D-1.1 | Columnas del ratio de endeudamiento (Propuesta: DTI `AMT_ANNUITY/AMT_INCOME_TOTAL`) | **Propuesta** |
-| D-1.2 | Qué saturación aplicar (Propuesta: exponente entrenable `x^p`) | **Propuesta** |
-| D-1.3 | Rango e inicialización de la saturación (Propuesta: `p∈[0.1,3]`, init 1) | **Propuesta** |
-| D-1.4 | Posición de la capa custom (Propuesta: sobre inputs crudos al principio) | **Propuesta** |
-| D-1.5 | Divisiones por cero / nulos (Propuesta: epsilon en denominador) | **Propuesta** |
-| D-1.6 | Salida de la capa (Propuesta: concatenar ratio a las features originales) | **Propuesta** |
+| D-1.1 | Columnas del ratio de endeudamiento (resuelto: DTI `AMT_ANNUITY/(AMT_INCOME_TOTAL+ε)`) | **Confirmada** |
+| D-1.2 | Qué saturación aplicar (exponente entrenable `x^p`, aprendido `p≈0,87`) | **Confirmada** |
+| D-1.3 | Rango e inicialización de la saturación (`p∈[0.1,3]`, init 1) | **Confirmada** |
+| D-1.4 | Posición de la capa custom (primera capa sobre inputs financieros) | **Confirmada** |
+| D-1.5 | Divisiones por cero / nulos (epsilon en denominador) | **Confirmada** |
+| D-1.6 | Salida de la capa (concatenar ratio → 14 features) | **Confirmada** |
 
-**Tarea 2 — FAIR loss (NB 05)** — 7 fichas, **6 Propuesta + 1 Abierta (D-2.7)**:
-
-| Ficha | Título | Estado |
-|---|---|---|
-| D-2.1 | Medida de dependencia en la penalización (Propuesta: HSIC o corr² ) | **Propuesta** |
-| D-2.2 | Forma de combinar ajuste+penalización (Propuesta: `BCE + λ·D`) | **Propuesta** |
-| D-2.3 | Métrica de equidad a reportar (Propuesta: **group gap** + tasas) | **Propuesta** |
-| D-2.4 | Métrica de precisión de la Pareto (Propuesta: **AUC-ROC**) | **Propuesta** |
-| D-2.5 | Cómo pasar `S` a la loss (Propuesta: concatenar `[y, S]` en `y_true`) | **Propuesta** |
-| D-2.6 | Dependencia sobre probabilidad o logit (Propuesta: probabilidad `ŷ`) | **Propuesta** |
-| D-2.7 | Batch size y σ del kernel | **Abierta** (proponer valor tras pruebas) |
-
-**Tarea 3 — Keras Tuner (NB 06)** — 4 fichas, **todas Propuesta**:
+**Tarea 2 — FAIR loss (NB 05)** — 7 fichas, **5 Confirmada + 1 Resuelta (D-2.1) + 1 Abierta (D-2.7)**:
 
 | Ficha | Título | Estado |
 |---|---|---|
-| D-3.1 | Estrategia de búsqueda (Propuesta: **Hyperband** o RandomSearch) | **Propuesta** |
-| D-3.2 | Hiperparámetros del espacio (incluye **dropout sí o sí** → Tarea 4) | **Propuesta** |
-| D-3.3 | Extraer pares (precisión, dependencia) (Propuesta: **bucle externo sobre λ**) | **Propuesta** |
-| D-3.4 | Métrica objetivo del tuner (Propuesta: **`val_auc`**, fairness como eje externo) | **Propuesta** |
+| D-2.1 | Medida de dependencia en la penalización (elegida **`corr²`**; HSIC/MMD comparadas) | **Resuelta** |
+| D-2.2 | Forma de combinar ajuste+penalización (`BCE + λ·D`) | **Confirmada** |
+| D-2.3 | Métrica de equidad a reportar (**group gap** + tasas) | **Confirmada** |
+| D-2.4 | Métrica de precisión de la Pareto (**AUC-ROC**) | **Confirmada** |
+| D-2.5 | Cómo pasar `S` a la loss (concatenar `[y, S]` en `y_true`) | **Confirmada** |
+| D-2.6 | Dependencia sobre probabilidad o logit (probabilidad `ŷ`) | **Confirmada** |
+| D-2.7 | Batch size y σ del kernel | **Abierta** (σ por defecto; heurística de la mediana pendiente) |
 
-**Tarea 4 — Incertidumbre (NB 07)** — 5 fichas, **3 Propuesta + 2 Abierta (D-4.2, D-4.4)**:
+**Tarea 3 — Keras Tuner (NB 06)** — 5 fichas (se añadió D-3.5), **todas Confirmada**:
 
 | Ficha | Título | Estado |
 |---|---|---|
-| D-4.1 | Método para la varianza (Propuesta: **MC-Dropout** + 2º modelo del error) | **Propuesta** |
-| D-4.2 | Número de pasadas / miembros T | **Abierta** (fijar T tras comprobar estabilidad; sug. 50–100) |
-| D-4.3 | Medir calidad de `EXT_SOURCE` (Propuesta: `N_EXT_MISSING` 0–3 + flags `*_missing`) | **Propuesta** |
-| D-4.4 | Umbral τ de clasificación | **Abierta** (decisión de política del grupo; con desbalance 11,4:1, τ<0,5) |
-| D-4.5 | Descomposición aleatoria/epistémica + calibración | **Propuesta (como extensión)** |
+| D-3.1 | Estrategia de búsqueda (**RandomSearch**; empate técnico con Hyperband) | **Confirmada** |
+| D-3.2 | Hiperparámetros del espacio (incluye **dropout sí o sí** → Tarea 4) | **Confirmada** |
+| D-3.3 | Extraer pares (precisión, dependencia) (**bucle externo sobre λ** + barrido limpio multi-semilla) | **Confirmada** |
+| D-3.4 | Métrica objetivo del tuner (**`val_auc`**, fairness como eje externo) | **Confirmada** |
+| D-3.5 | Integración T2↔T3 (tuner usa la **FAIR loss real** de `src.fair_loss`, no el fallback) | **Confirmada** |
 
-**Preprocesado (D-P.1 a D-P.7): las 7 Confirmadas** (no se rediscuten; el modelado solo
+**Tarea 4 — Incertidumbre (NB 07)** — 5 fichas, **todas Confirmada** (NB07, 2026-06-23):
+
+| Ficha | Título | Estado |
+|---|---|---|
+| D-4.1 | Método para la varianza (**MC-Dropout** T=100 + 2º modelo del error) | **Confirmada** |
+| D-4.2 | Número de pasadas / miembros T (**T = 100**, varianza estabilizada antes) | **Confirmada** |
+| D-4.3 | Medir calidad de `EXT_SOURCE` (`N_EXT_MISSING` 0–3 + flags `*_missing`) | **Confirmada** |
+| D-4.4 | Umbral τ de clasificación (**τ por coste = 0,66**; revisable con matriz de coste real) | **Confirmada** |
+| D-4.5 | Descomposición aleatoria/epistémica + calibración (extensión implementada) | **Confirmada** |
+
+**Preprocesado (D-P.1 a D-P.7): las 7 Confirmada** (no se rediscuten; el modelado solo
 las consume vía el contrato `(X, y, s)`). D-P.2 cerrada por experimento (gana mediana,
 AUC val = 0,728034).
 
-> Total `DECISIONES.md`: 29 fichas → 19 Propuesta · 7 Confirmada (todas de preprocesado) ·
-> 0 Revisar · 3 Abierta (D-2.7, D-4.2, D-4.4).
+**Modelo base (D-MB.1 a D-MB.5): las 5 Confirmada** (Grupo, 2026-06-20).
+
+> Total `DECISIONES.md`: **35 fichas → 0 Propuesta · 33 Confirmada · 1 Resuelta (D-2.1) ·
+> 0 Revisar · 1 Abierta (D-2.7)**.

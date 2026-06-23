@@ -266,6 +266,12 @@ Cómo aterriza todo lo anterior en el clasificador de concesión de crédito:
 
 ## 5. Huecos / decisiones pendientes
 
+> **Resuelto (2026-06-23).** Cerrado en D-1.1–D-1.6 e implementado en
+> `src/custom_layers.py` (`DebtRatioSaturatingLayer`, exponente `p∈[0.1,3]`).
+> Nota honesta: la capa es estable pero **no mejora AUC ni equidad** frente a la
+> base (el `p` aprendido ≈ identidad). Los puntos de abajo quedan como registro
+> del razonamiento previo.
+
 Lo que el material **no** fija y hay que decidir con criterio propio:
 
 1. **Fórmula exacta del ratio de endeudamiento.** Las fuentes dan la idea

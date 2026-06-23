@@ -490,6 +490,13 @@ neutralidad que quizá no necesites a un coste de precisión que sí pagas"*.
 
 ## 5. Huecos / decisiones pendientes
 
+> **Resuelto (2026-06-23).** Estos huecos se cerraron en la práctica: 3 medidas
+> implementadas (corr²/HSIC/MMD) en `src/fair_loss.py`; en el NB05 ganó
+> **MMD λ=10** por presupuesto de AUC; `S` se pasa concatenada en `y_true=[y,s]`;
+> se penaliza la **probabilidad** (no el logit). Ver `docs/DECISIONES.md` D-2.x.
+> Los puntos de abajo quedan como registro del razonamiento previo; cada uno se
+> resolvió en D-2.x.
+
 Lo que el material **no zanja** para el taller y hay que decidir al implementar:
 
 1. **Qué medida concreta usar en la penalización.** Las fuentes ofrecen un menú
@@ -532,5 +539,3 @@ Lo que el material **no zanja** para el taller y hay que decidir al implementar:
    (`profe-lectures/topics/fairness/03-fair-kernel-learning.qmd`). El taller
    tendrá que fijar un criterio (p. ej. group gap por debajo de X) para reportar
    un modelo concreto.
-</content>
-</invoke>

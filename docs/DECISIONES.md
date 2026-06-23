@@ -35,8 +35,9 @@ Fuente de huecos: [`docs/teoria/01-capa-custom.md`](teoria/01-capa-custom.md) §
   relación **no monótona real con el impago** (joroba por deciles: 7,14 % → 8,85 % en D8 → 8,19 % en D10),
   señal que la red puede explotar, y es una variable limpia (mediana 0,16; p99 0,48). Es además la
   correspondencia que sugiere [T1] §4 ("lo que paga / lo que cobra").
-- **Estado:** Propuesta
-- **Decidido por / fecha:** _(pendiente)_
+- **Resolución (NB04, 2026-06-23):** `DebtRatioSaturatingLayer` calcula **DTI = `AMT_ANNUITY / (AMT_INCOME_TOTAL + ε)`** como ratio principal y lo concatena → 14 features. **Nota honesta:** la capa es correcta pero **NO mejora AUC ni reduce el gap** frente a la base; el ratio opera sobre features ya `log1p`+escaladas, así que es un **proxy de DTI en escala transformada**, no el cociente crudo. NB04 ejecutado: AUC test **0,7437**, gap **+5,33 pp**, `p≈0,87`.
+- **Estado:** Confirmada
+- **Decidido por / fecha:** Oscar / 2026-06-23
 
 ### D-1.2 · Qué saturación aplicar
 - **Decisión:** qué operación de saturación/restricción usa la capa.
@@ -46,8 +47,9 @@ Fuente de huecos: [`docs/teoria/01-capa-custom.md`](teoria/01-capa-custom.md) §
   la saturación que el profesor desarrolla explícitamente ([T1] §2.2) y porque el [EDA] confirma su
   motivo de dominio: el ingreso tiene **skew ≈ 392** (cola larguísima), justo el caso en que un
   exponente `p<1` "uniformiza" la distribución y no malgasta capacidad en la cola.
-- **Estado:** Propuesta
-- **Decidido por / fecha:** _(pendiente)_
+- **Resolución (NB04, 2026-06-23):** implementado el **exponente entrenable `x^p`** dentro de `DebtRatioSaturatingLayer`; el `p` aprendido converge a **≈0,87** (casi identidad), por lo que en la práctica la saturación apenas reescala el ratio sobre features ya transformadas.
+- **Estado:** Confirmada
+- **Decidido por / fecha:** Oscar / 2026-06-23
 
 ### D-1.3 · Valores de la saturación (rango e inicialización)
 - **Decisión:** rango del exponente y valor inicial.
@@ -56,8 +58,9 @@ Fuente de huecos: [`docs/teoria/01-capa-custom.md`](teoria/01-capa-custom.md) §
   Init a 1 hace que la capa empiece como identidad y el clip evita inestabilidad numérica. El profesor
   los da "por ejemplo", así que quedan como punto de partida ajustable → marcar **Revisar** tras
   los primeros entrenamientos.
-- **Estado:** Propuesta
-- **Decidido por / fecha:** _(pendiente)_
+- **Resolución (NB04, 2026-06-23):** `p ∈ [0.1, 3]` con init `1.0` y clip sobre el parámetro, tal cual; arranca como identidad y converge a `p≈0,87`, dentro del rango y sin tocar los topes.
+- **Estado:** Confirmada
+- **Decidido por / fecha:** Oscar / 2026-06-23
 
 ### D-1.4 · Posición de la capa custom
 - **Decisión:** dónde se inserta (antes de las densas, interna, o ambas).
@@ -67,8 +70,9 @@ Fuente de huecos: [`docs/teoria/01-capa-custom.md`](teoria/01-capa-custom.md) §
   real) **y** dejar abierto probar una variante interna. [T1] §4 avisa de que el exponente como primera
   capa **sobre un ratio ya acotado** aporta poco, pero sobre inputs sesgados (ingreso/anualidad,
   skew 392 en [EDA]) sí uniformiza. El ratio de D-1.1 se calcula en la misma capa custom antes de las densas.
-- **Estado:** Propuesta
-- **Decidido por / fecha:** _(pendiente)_
+- **Resolución (NB04, 2026-06-23):** `DebtRatioSaturatingLayer` se inserta como **primera capa** sobre los inputs financieros y calcula ahí el ratio antes de las densas (14 features de salida).
+- **Estado:** Confirmada
+- **Decidido por / fecha:** Oscar / 2026-06-23
 
 ### D-1.5 · Tratamiento de divisiones por cero / nulos en el ratio
 - **Decisión:** cómo evitar `inf`/`NaN` al dividir.
@@ -76,8 +80,9 @@ Fuente de huecos: [`docs/teoria/01-capa-custom.md`](teoria/01-capa-custom.md) §
 - **Propuesta:** **epsilon en el denominador** (`annuity / (income + ε)`) dentro de la capa, en
   `keras.ops`. El [EDA] detecta **12 nulos en `AMT_ANNUITY`** y el ingreso no tiene ceros pero la
   protección es barata; la imputación de nulos se resuelve antes en preprocesado (ver D-P.2).
-- **Estado:** Propuesta
-- **Decidido por / fecha:** _(pendiente)_
+- **Resolución (NB04, 2026-06-23):** la capa divide con epsilon en el denominador (`annuity / (income + ε)`) en `keras.ops`, sin `inf`/`NaN` en la ejecución.
+- **Estado:** Confirmada
+- **Decidido por / fecha:** Oscar / 2026-06-23
 
 ### D-1.6 · Salida de la capa de ratio
 - **Decisión:** la capa devuelve solo el/los ratio(s) o las features originales **+** los ratios.
@@ -85,8 +90,9 @@ Fuente de huecos: [`docs/teoria/01-capa-custom.md`](teoria/01-capa-custom.md) §
 - **Propuesta:** **concatenar** el/los ratio(s) a las features originales (no sustituirlas), para no
   perder información que las densas sí usan. Se descarta la versión "todas con todas" por explosión
   combinatoria ([T1] §2.1, §5).
-- **Estado:** Propuesta
-- **Decidido por / fecha:** _(pendiente)_
+- **Resolución (NB04, 2026-06-23):** la capa **concatena** el ratio a las features originales (13 + 1 → 14 features), sin sustituirlas.
+- **Estado:** Confirmada
+- **Decidido por / fecha:** Oscar / 2026-06-23
 
 ---
 
@@ -118,7 +124,11 @@ Fuente de huecos: [`docs/teoria/02-fair-loss.md`](teoria/02-fair-loss.md) §5 y
   el desplazamiento de medias que es justo lo que mueve el group gap, es O(n) (las kernel HSIC/MMD exigen
   matrices n×n, inviables en val completo de 46k sin submuestreo) y empata en calidad. HSIC/MMD quedan
   enchufadas y comparadas como evidencia, no descartadas.
-- **Estado:** **Resuelta** *(corr² elegida; HSIC/MMD comparadas)*
+- **Matiz de contexto (dos barridos distintos):** en el **NB05 standalone** (modelo FAIR aislado) la medida ganadora por
+  presupuesto fue **MMD con λ=10** (AUC 0,7431→0,7337, gap **−84 %**); en el **NB06** (Tarea 3, otro contexto: backbone fijo
+  de mayor AUC + `class_weight`) el compromiso elegido fue **corr² con λ=5**. No son la misma elección porque no es el mismo
+  experimento: el contexto (arquitectura, balanceo, rejilla de λ) cambia cuál medida sale mejor por presupuesto.
+- **Estado:** **Resuelta** *(corr² elegida en NB06; MMD λ=10 en NB05; HSIC/MMD comparadas)*
 - **Decidido por / fecha:** Oscar / 2026-06-23
 
 ### D-2.2 · Forma de combinar ajuste + penalización
@@ -127,8 +137,9 @@ Fuente de huecos: [`docs/teoria/02-fair-loss.md`](teoria/02-fair-loss.md) §5 y
 - **Propuesta:** **`L = BCE(ŷ, TARGET) + λ·D(ŷ, CODE_GENDER)`**, con `λ` barrido para trazar la frontera
   de Pareto ([T2] §2). `fit` = entropía cruzada binaria sobre `TARGET`; `CODE_GENDER` solo se usa en
   entrenamiento, nunca como entrada de predicción.
-- **Estado:** Propuesta
-- **Decidido por / fecha:** _(pendiente)_
+- **Resolución (NB05, 2026-06-23):** implementada la loss **`L = BCE(ŷ, TARGET) + λ·D(ŷ, CODE_GENDER)`** con `λ` barrido para la frontera de Pareto; el género solo entra como señal de entrenamiento.
+- **Estado:** Confirmada
+- **Decidido por / fecha:** Oscar / 2026-06-23
 
 ### D-2.3 · Métrica de equidad a reportar (S binaria)
 - **Decisión:** qué número entregamos como "justicia".
@@ -139,8 +150,9 @@ Fuente de huecos: [`docs/teoria/02-fair-loss.md`](teoria/02-fair-loss.md) §5 y
   explícitamente el group gap para `S` binaria. **Aviso de auditoría:** no medir la equidad solo con
   `EXT_SOURCE_2`, que el [EDA] muestra **neutra al género** (F 0,516 / M 0,511) y daría falsa sensación
   de justicia; el canal real es `EXT_SOURCE_1`.
-- **Estado:** Propuesta
-- **Decidido por / fecha:** _(pendiente)_
+- **Resolución (NB05, 2026-06-23):** se reporta el **group gap M−F** como métrica principal **+ tasas por grupo** de apoyo; con MMD λ=10 el gap cae **−84 %** frente a la base.
+- **Estado:** Confirmada
+- **Decidido por / fecha:** Oscar / 2026-06-23
 
 ### D-2.4 · Métrica de precisión para la curva de Pareto
 - **Decisión:** qué va en el eje "precisión" de la frontera.
@@ -148,8 +160,9 @@ Fuente de huecos: [`docs/teoria/02-fair-loss.md`](teoria/02-fair-loss.md) §5 y
 - **Propuesta:** **AUC-ROC**, porque es la métrica oficial de Home Credit y es robusta al fuerte
   desbalance que mide el [EDA] (**8,07 % de impagos, ratio 11,4:1**), donde la accuracy engaña
   (un trivial "siempre paga" acierta el 91,93 %).
-- **Estado:** Propuesta
-- **Decidido por / fecha:** _(pendiente)_
+- **Resolución (NB05, 2026-06-23):** el eje "precisión" de la frontera de Pareto es la **AUC-ROC**, métrica oficial de Home Credit y robusta al desbalance.
+- **Estado:** Confirmada
+- **Decidido por / fecha:** Oscar / 2026-06-23
 
 ### D-2.5 · Cómo pasar `S` (género) a la loss
 - **Decisión:** mecanismo para que la loss vea `CODE_GENDER` por batch.
@@ -158,16 +171,18 @@ Fuente de huecos: [`docs/teoria/02-fair-loss.md`](teoria/02-fair-loss.md) §5 y
 - **Propuesta:** **concatenar `[y, S]` en `y_true`** y desempaquetar en la loss, para no depender de
   una librería externa y controlar el cálculo (patrón clásico de Keras, [T2] §3). Si se prefiere rapidez,
   `keras-fairkl` es válido. Decisión de implementación de bajo riesgo.
-- **Estado:** Propuesta
-- **Decidido por / fecha:** _(pendiente)_
+- **Resolución (NB05, 2026-06-23):** se **concatena `[y, S]` en `y_true`** y se desempaqueta dentro de la loss, sin depender de librería externa (mismo patrón que `SlicedAUC` en D-3.4).
+- **Estado:** Confirmada
+- **Decidido por / fecha:** Oscar / 2026-06-23
 
 ### D-2.6 · Definir la dependencia sobre la probabilidad o el logit
 - **Decisión:** `D` opera sobre `P(TARGET=1)` o sobre el score pre-sigmoide.
 - **Opciones:** (a) probabilidad `ŷ = P(TARGET=1)`; (b) logit.
 - **Propuesta:** sobre la **probabilidad `ŷ`**, que es la magnitud interpretable y la que define el
   group gap reportado (D-2.3). [T2] §5 lo deja abierto; se elige la probabilidad por coherencia con la métrica.
-- **Estado:** Propuesta
-- **Decidido por / fecha:** _(pendiente)_
+- **Resolución (NB05, 2026-06-23):** `D` opera sobre la **probabilidad `ŷ = P(TARGET=1)`** (post-sigmoide), coherente con el group gap que se reporta.
+- **Estado:** Confirmada
+- **Decidido por / fecha:** Oscar / 2026-06-23
 
 ### D-2.7 · Tamaño de batch y ancho de banda σ del kernel
 - **Decisión:** cómo estimar la dependencia en mini-batch de forma estable.
@@ -286,16 +301,21 @@ Fuente de huecos: [`docs/teoria/04-incertidumbre.md`](teoria/04-incertidumbre.md
   fiel al profe**. MC-Dropout es barato (una sola red), da incertidumbre **epistémica** (`Var[p]`) y
   conecta directo con el análisis de `EXT_SOURCE` ([T4] §4.2): la pregunta del taller (¿más duda donde
   faltan fuentes?) es epistémica. El dropout ya está en el espacio de búsqueda (D-3.2).
-- **Estado:** Propuesta
-- **Decidido por / fecha:** _(pendiente)_
+- **Resolución (NB07, 2026-06-23):** implementadas **ambas** — MC-Dropout (`src.uncertainty.mc_dropout_predict`,
+  T=100 con `training=True`) como método principal y el **2º modelo del error** `|p−y|` como entrega base.
+  El consenso `p_bar` mantiene el AUC (0.7346 ≈ 0.7347 del modelo heredado): la incertidumbre no cuesta precisión.
+- **Estado:** Confirmada
+- **Decidido por / fecha:** Oscar / 2026-06-23
 
 ### D-4.2 · Número de pasadas / miembros T
 - **Decisión:** cuántas pasadas de MC-Dropout (o miembros de ensemble).
 - **Opciones:** el material usa 15 (ensemble) y 100 (MC-Dropout en el lab); no fija un óptimo.
 - **Propuesta:** **T = 50–100**, comprobando que la varianza se estabiliza ([T4] §5 hueco 2). Valor
   concreto a fijar por prueba → **Revisar**. Sin evidencia del EDA para un T exacto.
-- **Estado:** Abierta (fijar T tras comprobar estabilidad)
-- **Decidido por / fecha:** _(pendiente)_
+- **Resolución (NB07, 2026-06-23):** **T = 100**. La curva de estabilidad (`07_incert__estabilidad_T.png`)
+  muestra que la `Var[p]` media se aplana mucho antes de 100 → 100 es holgado.
+- **Estado:** Confirmada (T=100)
+- **Decidido por / fecha:** Oscar / 2026-06-23
 
 ### D-4.3 · Cómo medir la "calidad de EXT_SOURCE" por solicitante
 - **Decisión:** qué indicador resume la información externa disponible de cada fila.
@@ -306,8 +326,11 @@ Fuente de huecos: [`docs/teoria/04-incertidumbre.md`](teoria/04-incertidumbre.md
   _1↔_2 = 0,011), así que el conteo es un **gradiente real** y no redundante; (2) la **ausencia predice
   impago** de forma casi monótona (0→7,3 % · 1→8,2 % · 2→9,9 %). Es la materia prima ideal para cruzar
   con `Var[p]`.
-- **Estado:** Propuesta
-- **Decidido por / fecha:** _(pendiente)_
+- **Resolución (NB07, 2026-06-23):** se usa `N_EXT_MISSING`. Hallazgo matizado: correlación global **débil**
+  (Spearman ≈ +0,02), pero en el **extremo** la `Var[p]` media sube de 0,0015 (0 ausentes) a **0,0022 (3 ausentes,
+  +47 %)** → la incertidumbre epistémica sí crece cuando faltan **todas** las fuentes externas.
+- **Estado:** Confirmada
+- **Decidido por / fecha:** Oscar / 2026-06-23
 
 ### D-4.4 · Umbral τ de clasificación
 - **Decisión:** dónde se corta `P(impago)` para asignar clase.
@@ -315,8 +338,11 @@ Fuente de huecos: [`docs/teoria/04-incertidumbre.md`](teoria/04-incertidumbre.md
 - **Propuesta:** **no fijar 0,5 por defecto.** Con el desbalance del [EDA] (**11,4:1**) y un coste de
   falso negativo (impago no detectado) alto, el umbral óptimo será < 0,5; es una **decisión de política**
   ([T4] §5 hueco 4), a fijar con la matriz de coste del grupo. Se listan opciones sin imponer una.
-- **Estado:** Abierta (decisión de política del grupo)
-- **Decidido por / fecha:** _(pendiente)_
+- **Resolución (NB07, 2026-06-23):** τ por coste (C_FN=5) sale **0,66** (no <0,5). Matiz importante: el modelo
+  heredado usa `class_weight` balanceado (D-MB.3), que **infla** las probabilidades (≈0,3–0,5), así que sobre esa
+  escala el umbral óptimo es alto; la heurística "desbalance ⇒ τ<0,5" asume probabilidades sin reponderar.
+- **Estado:** Confirmada (τ por coste; revisable con la matriz de coste real)
+- **Decidido por / fecha:** Oscar / 2026-06-23
 
 ### D-4.5 · Descomposición aleatoria vs epistémica y calibración (extensiones)
 - **Decisión:** si se separa incertidumbre aleatoria/epistémica y si se comprueba calibración.
@@ -325,8 +351,12 @@ Fuente de huecos: [`docs/teoria/04-incertidumbre.md`](teoria/04-incertidumbre.md
   formal ([T4] §5 huecos 5-6). El [EDA] anticipa que tiene sentido mirarlo: la banda IC95 % de la tasa de
   impago **se ensancha donde hay menos datos**, y la clase minoritaria (impago) debería concentrar más
   varianza en el gráfico "buen vs mal pagador". Dejar como extensión si hay tiempo.
-- **Estado:** Propuesta (como extensión)
-- **Decidido por / fecha:** _(pendiente)_
+- **Resolución (NB07, 2026-06-23):** implementada como extensión. Aleatoria `p(1−p)` y epistémica `Var[p]` están
+  **relacionadas pero no son iguales** (Spearman ≈ −0,58). Calibración: el 10 % de mayor `Var[p]` tiene más error
+  real (14,7 % vs 12,9 %) → la varianza sirve de **alarma** para revisión humana. Nota: en E3 las distribuciones
+  buen/mal pagador salen **casi iguales** (la duda se concentra por calidad de entrada, no por etiqueta).
+- **Estado:** Confirmada (extensión implementada)
+- **Decidido por / fecha:** Oscar / 2026-06-23
 
 ---
 
@@ -522,15 +552,25 @@ y `results/tables/03_base__metricas_test.csv` (parte base de E5).
 
 ## Resumen de estados
 
-| Sección | Fichas | Propuesta | Confirmada | Revisar | Abierta |
+| Sección | Fichas | Propuesta | Confirmada | Resuelta | Abierta |
 | --- | --- | --- | --- | --- | --- |
-| Tarea 1 — Capa custom | 6 | 6 | 0 | 0 | 0 |
-| Tarea 2 — FAIR loss | 7 | 5 | 1 (D-2.1 Resuelta) | 0 | 1 (D-2.7) |
+| Tarea 1 — Capa custom | 6 | 0 | 6 | 0 | 0 |
+| Tarea 2 — FAIR loss | 7 | 0 | 5 | 1 (D-2.1) | 1 (D-2.7) |
 | Tarea 3 — Keras Tuner | 5 | 0 | 5 | 0 | 0 |
-| Tarea 4 — Incertidumbre | 5 | 3 | 0 | 0 | 2 (D-4.2, D-4.4) |
+| Tarea 4 — Incertidumbre | 5 | 0 | 5 | 0 | 0 |
 | Preprocesado | 7 | 0 | 7 | 0 | 0 |
 | Modelo base (NB 03) | 5 | 0 | 5 | 0 | 0 |
-| **Total** | **35** | **14** | **18** | **0** | **3** |
+| **Total** | **35** | **0** | **33** | **1** | **1** |
+
+> **Tarea 1 confirmada (NB04 ejecutado, 2026-06-23):** las **6** fichas D-1.1–D-1.6 quedan **Confirmadas**.
+> `DebtRatioSaturatingLayer` (`src/custom_layers.py`) implementa DTI = `annuity/(income+ε)` con exponente
+> entrenable `p∈[0.1,3]` (init 1,0) y concatena → 14 features. Ejecución: AUC test **0,7437**, gap **+5,33 pp**,
+> `p≈0,87`. **Nota honesta:** la capa es correcta pero **no mejora AUC ni reduce el gap** frente a la base (el
+> ratio opera sobre features ya `log1p`+escaladas, es un proxy de DTI en escala transformada).
+
+> **Tarea 2 confirmada (NB05 ejecutado, 2026-06-23):** las fichas **D-2.2–D-2.6** quedan **Confirmadas**
+> (loss `BCE+λ·D`, group gap + tasas, AUC-ROC, `[y,s]` empaquetado, `D` sobre la probabilidad). **D-2.1**
+> queda **Resuelta** y **D-2.7 Abierta** (ver más abajo).
 
 > **Tarea 3 confirmada (implementación, 2026-06-23):** las **5** fichas D-3.1–D-3.5 quedan implementadas y
 > validadas por ejecución (ver el bloque de resultado al inicio de la sección). Marcadas **Confirmada
@@ -540,9 +580,10 @@ y `results/tables/03_base__metricas_test.csv` (parte base de E5).
 > a un fallback `corr²` por un import roto). El compromiso final usa la medida **`corr²`** con **λ\*=5**.
 
 > **D-2.1 resuelta (2026-06-23):** se comparan las **tres** medidas (`corr²`/`hsic`/`mmd²`) de
-> `src/fair_loss.py` sobre el mismo backbone en el NB06 y se elige **`corr²` por presupuesto**. **D-2.7
-> sigue ABIERTA**: las kernel HSIC/MMD usan σ por defecto, sin la heurística de la mediana (no afecta al
-> compromiso, que usa `corr²`).
+> `src/fair_loss.py`. Atención al **contexto**: en el **NB05 standalone** gana **MMD λ=10** (gap −84 %),
+> y en el **NB06** (backbone fijo + `class_weight`) el compromiso es **`corr²` λ=5**; son barridos distintos,
+> no una contradicción. **D-2.7 sigue ABIERTA**: las kernel HSIC/MMD usan σ por defecto, sin la heurística de
+> la mediana (no afecta al compromiso del NB06, que usa `corr²`).
 
 **Preprocesado validado por el grupo:** las **7** fichas (D-P.1 a D-P.7) están **Confirmadas**; ya no queda
 ninguna en **Revisar**. D-P.2 quedó **Confirmada (2026-06-20)** tras el experimento de AUC en validación, que
@@ -552,5 +593,6 @@ confirmaron el 2026-06-19.
 **Modelo base confirmado (2026-06-20):** las **5** fichas (D-MB.1 a D-MB.5) están **Confirmadas**: fijan la
 arquitectura `64→32` ReLU con `Dropout(0.3)` (sin capa custom ni FAIR), la compilación BCE + Adam + AUC, el
 `class_weight` balanced, la parada por `val_auc` con umbral 0,5 provisional y la auditoría de equidad por group
-gap. Registran **decisiones de diseño**, no resultados numéricos (AUC/gap reales se rellenarán tras ejecutar el
-notebook). Las decisiones de las Tareas 1-4 siguen pendientes de validación.
+gap. Registran **decisiones de diseño**, no resultados numéricos (AUC/gap reales se rellenan en los notebooks de
+cada tarea). **Las cuatro tareas están implementadas y ejecutadas (2026-06-23):** ya no quedan fichas en estado
+**Propuesta** — 33 Confirmadas, 1 Resuelta (D-2.1) y 1 Abierta (D-2.7).

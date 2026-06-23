@@ -306,7 +306,7 @@ menos" → mayor incertidumbre **epistémica** → mayor `Var[p]`. Pasos sugerid
 
 1. Definir un indicador de "calidad de fuentes externas" por fila. Opciones:
    número de `EXT_SOURCE_k` ausentes (0–3), o un flag binario "alguna imputada".
-   *(Decisión pendiente, ver §5.)*
+   *(Resuelto: se usó `N_EXT_MISSING` = nº de ausentes, D-4.3; ver §5.)*
 2. Calcular la incertidumbre por fila en `test` (la varianza de 4.1).
 3. Comparar la distribución de la varianza entre perfiles con fuentes completas
    vs imputadas (boxplot/histograma, o correlación nº-ausentes ↔ varianza).
@@ -332,6 +332,13 @@ las tiras de calibración de `05-predictive-bands.qmd` y `lab-tool2-gaussian-mc.
 ---
 
 ## 5. Huecos / decisiones pendientes
+
+> **Resuelto (2026-06-23).** Implementado en el NB07 (`src/uncertainty.py`):
+> MC-Dropout T=100 (D-4.2) + 2º modelo del error `|p−y|`; calidad de fuentes =
+> `N_EXT_MISSING` (D-4.3); umbral por coste `τ = 0.66` (D-4.4, sube por las
+> probabilidades ya reponderadas, no `τ<0.5`); descomposición aleatoria/epistémica
+> + calibración hechas (D-4.5). Ver `docs/DECISIONES.md`. Los puntos de abajo
+> quedan como registro del razonamiento previo.
 
 Lo que el material **no** resuelve y hay que decidir:
 

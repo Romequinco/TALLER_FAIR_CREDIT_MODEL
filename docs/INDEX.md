@@ -46,12 +46,12 @@ El contrato de datos `(X, y, s)` y las decisiones de preprocesado (`D-P.*`) qued
 | `04_tarea1_capa_custom.ipynb` | **Tarea 1** — capa custom del ratio de endeudamiento (`D-1.x`) | ✅ implementado |
 | `05_tarea2_fair_loss.ipynb` | **Tarea 2** — FAIR loss con 3 medidas (`corr²`/HSIC/MMD); produce la tabla E5 (`D-2.x`) | ✅ implementado |
 | `06_tarea3_keras_tuner.ipynb` | **Tarea 3** — AutoML / Keras Tuner; produce la Pareto E2 (`D-3.x`) | ✅ implementado |
-| `07_tarea4_incertidumbre.ipynb` | **Tarea 4** — clase + varianza; produce E3 (`D-4.x`) | 🟡 esqueleto |
+| `07_tarea4_incertidumbre.ipynb` | **Tarea 4** — clase + varianza (MC-Dropout T=100 + 2º modelo del error); E3 + cruce `N_EXT_MISSING` (`D-4.x`) | ✅ implementado |
 
-> 🟡 **esqueleto** = estructura, imports y carga de datos montados y verificados (ejecutan
-> limpio); falta implementar la lógica de modelos. Las convenciones comunes que todos respetan
-> (carga `(X, y, s)`, rutas de `results/`, formato del bloque de decisiones, paleta y mapa de
-> entregables E1–E5) están en [`CONVENCIONES_MODELADO.md`](CONVENCIONES_MODELADO.md).
+> Todos los notebooks (01–07) están implementados y ejecutados; ninguno queda en esqueleto.
+> Las convenciones comunes que todos respetan (carga `(X, y, s)`, rutas de `results/`, formato
+> del bloque de decisiones, paleta y mapa de entregables E1–E5) están en
+> [`CONVENCIONES_MODELADO.md`](CONVENCIONES_MODELADO.md).
 >
 > **Tarea 3 (06) terminada e integrada con la FAIR loss real (05):** Keras Tuner
 > (RandomSearch ≈ Hyperband → RandomSearch) fija el backbone (1×64, dropout 0.3, relu,
