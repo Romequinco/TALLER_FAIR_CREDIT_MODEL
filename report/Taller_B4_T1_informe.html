@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Taller B4-T1 · Crédito Justo y Confiable</title>
+<style>
+/* ============================================================
+   Taller B4-T1 — Informe COMPACTO (~10 págs) · académico-financiero
+   Render: Microsoft Edge headless --print-to-pdf (A4)
+   ============================================================ */
+
+:root{
+  --navy:#0e2a47; --navy-2:#163a61; --steel:#3f5e7d; --slate:#5b6b7b;
+  --ink:#1c2733; --accent:#0f8b8d; --accent-2:#c8a24a; --good:#1b7a4b; --bad:#b23b3b;
+  --line:#d8e0e8; --soft:#f4f7fa; --soft-2:#eef3f8;
+}
+*{ box-sizing:border-box; }
+
+@page{ size:A4; margin:12mm 13mm 11mm 13mm; }
+@page cover{ margin:0; }
+
+html,body{ margin:0; padding:0; }
+body{
+  font-family:"Segoe UI","Calibri",-apple-system,system-ui,sans-serif;
+  color:var(--ink); font-size:9.2pt; line-height:1.32;
+  -webkit-print-color-adjust:exact; print-color-adjust:exact;
+}
+h1,h2,h3,h4{ font-family:"Georgia","Times New Roman",serif; color:var(--navy); line-height:1.15; }
+
+/* ---------- PORTADA ---------- */
+.cover{ page: cover; width:210mm; height:297mm; background:#fff; color:var(--ink);
+  display:flex; flex-direction:column; }
+.cover .topband{ background:var(--navy); color:#fff; padding:6mm 20mm; display:flex;
+  justify-content:space-between; align-items:center; font-size:9pt; letter-spacing:.14em; text-transform:uppercase; }
+.cover .topband .r{ color:var(--accent-2); }
+.cover .body{ flex:1 1 auto; padding:20mm 20mm 0 20mm; }
+.cover .eyebrow{ font-size:9.5pt; color:var(--steel); letter-spacing:.06em; text-transform:uppercase; margin-bottom:7mm; }
+.cover h1{ font-size:27pt; line-height:1.16; margin:0 0 5mm 0; color:var(--navy); }
+.cover .sub{ font-family:"Georgia",serif; font-style:italic; font-size:13pt; color:var(--steel); margin-bottom:8mm; }
+.cover hr.gold{ width:38mm; border:0; border-top:3px solid var(--accent-2); margin:0 0 7mm 0; }
+.cover h3.lbl{ font-size:10.5pt; color:var(--navy); text-transform:uppercase; letter-spacing:.1em;
+  margin:0 0 2mm 0; padding-bottom:1mm; border-bottom:1px solid var(--line); }
+.cover .abstract{ font-size:10pt; line-height:1.5; text-align:justify; color:var(--ink); margin:0 0 9mm 0; }
+.cover table.facts{ width:100%; border-collapse:collapse; font-size:9.4pt; margin:0 0 10mm 0; }
+.cover table.facts td{ padding:1.7mm 0; border-bottom:1px solid var(--line); vertical-align:top; }
+.cover table.facts td.k{ width:44mm; color:var(--steel); font-weight:600; }
+.cover .authors .lab{ font-size:8.5pt; text-transform:uppercase; letter-spacing:.12em; color:var(--steel); margin-bottom:1.5mm; }
+.cover .authors .names{ font-size:13.5pt; color:var(--navy); font-weight:600; font-family:"Georgia",serif; }
+.cover .footband{ background:var(--navy); color:#cfe0ee; padding:5mm 20mm; font-size:8.6pt; line-height:1.4; }
+.cover .footband b{ color:#fff; }
+
+/* ---------- SECCIONES (compactas, sin saltos) ---------- */
+section{ margin:0 0 3mm 0; }
+.section-head{ display:flex; align-items:center; gap:8px; margin:3mm 0 2mm 0; padding-bottom:1.4mm; border-bottom:1.6px solid var(--line); }
+.section-head .num{ flex:0 0 auto; width:22px; height:22px; border-radius:5px; background:var(--navy); color:#fff;
+  font-family:"Georgia",serif; font-weight:bold; display:flex; align-items:center; justify-content:center; font-size:11pt; }
+.section-head h2{ margin:0; font-size:15pt; }
+.section-head .tag{ margin-left:auto; font-size:7.4pt; letter-spacing:.1em; text-transform:uppercase; color:var(--accent);
+  border:1px solid var(--accent); border-radius:11px; padding:1px 8px; }
+
+h3{ font-size:10.5pt; margin:2.5mm 0 1mm 0; }
+p{ margin:0 0 2mm 0; text-align:justify; }
+p.lead{ font-size:10pt; color:var(--steel); margin-bottom:2mm; }
+p.nota{ font-size:8.4pt; font-style:italic; color:var(--slate); border-left:2.5px solid var(--accent-2);
+  padding:1mm 0 1mm 3mm; margin:2mm 0; background:#fbf8f0; text-align:left; }
+strong{ color:var(--navy-2); }
+code,.mono{ font-family:"Consolas","Courier New",monospace; font-size:8pt; background:var(--soft-2);
+  padding:0 3px; border-radius:3px; color:var(--navy-2); }
+a{ color:var(--accent); text-decoration:none; }
+
+ul.clean{ margin:1mm 0 2mm 0; padding-left:4.5mm; }
+ul.clean li{ margin-bottom:0.6mm; }
+ul.clean li::marker{ color:var(--accent); }
+
+/* ---------- FIGURAS (pequeñas) ---------- */
+figure{ margin:2mm 0; page-break-inside:avoid; text-align:center; }
+figure img{ max-width:100%; border:1px solid var(--line); border-radius:5px; background:#fff; }
+figure.arch img{ max-height:78mm; width:auto; }
+figure.med img{ max-height:55mm; width:auto; }
+figcaption{ font-size:7.6pt; color:var(--slate); margin-top:1mm; line-height:1.3; text-align:left; }
+figcaption b{ color:var(--navy-2); }
+.fig-star img{ box-shadow:0 0 0 2px var(--accent-2); }
+
+/* montaje de curvas de loss (3 en fila) */
+.montage{ display:flex; gap:3mm; align-items:flex-end; justify-content:center; }
+.montage img{ flex:1 1 0; min-width:0; max-height:50mm; width:auto; border:1px solid var(--line); border-radius:4px; }
+
+/* fila de dos figuras */
+.figrow{ display:flex; gap:4mm; align-items:center; }
+.figrow figure{ flex:1 1 0; min-width:0; margin:1.5mm 0; }
+.figrow figure img{ max-height:54mm; width:auto; }
+
+/* ---------- KPIs compactos ---------- */
+.kpis{ display:flex; gap:3mm; margin:2mm 0; page-break-inside:avoid; }
+.kpi{ flex:1; background:var(--navy); color:#fff; border-radius:7px; padding:2.5mm 2mm; text-align:center; }
+.kpi.alt{ background:var(--accent); } .kpi.gold{ background:linear-gradient(135deg,#b8902f,#d8b659); }
+.kpi .v{ font-family:"Georgia",serif; font-size:15pt; font-weight:bold; line-height:1; }
+.kpi .l{ font-size:6.8pt; letter-spacing:.03em; text-transform:uppercase; color:rgba(255,255,255,.88); margin-top:1.2mm; }
+
+/* ---------- TABLA ---------- */
+table.data{ width:100%; border-collapse:collapse; margin:2mm 0; font-size:8.4pt; page-break-inside:avoid; }
+table.data thead th{ background:var(--navy); color:#fff; padding:1.6mm 2.4mm; text-align:left; font-weight:600; font-size:8pt; }
+table.data tbody td{ padding:1.5mm 2.4mm; border-bottom:1px solid var(--line); }
+table.data tbody tr:nth-child(even){ background:var(--soft); }
+table.data tr.best{ background:#eaf6f6 !important; }
+table.data tr.best td{ font-weight:700; color:var(--navy); border-top:2px solid var(--accent); border-bottom:2px solid var(--accent); }
+table.data .star{ color:var(--accent-2); }
+
+.muted{ color:var(--slate); }
+.footer-note{ font-size:7.4pt; color:var(--slate); border-top:1px solid var(--line); padding-top:1.5mm; margin-top:3mm; text-align:left; }
+
+</style>
+</head>
+<body>
+<!-- 00_portada.html -->
+<div class="cover">
+  <div class="topband">
+    <span>Máster MIAX · IA aplicada a los mercados</span>
+    <span class="r">Bloque 4 · Tarea 1</span>
+  </div>
+
+  <div class="body">
+    <div class="eyebrow">Documento de entrega · Junio de 2026</div>
+    <h1>Redes neuronales confiables para scoring de crédito: equidad de género e incertidumbre</h1>
+    <div class="sub">Diseño, entrenamiento y auditoría sobre el dataset Home Credit Default Risk</div>
+    <hr class="gold">
+
+    <h3 class="lbl">Resumen</h3>
+    <p class="abstract">Entrenamos un clasificador neuronal para estimar el riesgo de impago en solicitantes con poco historial crediticio. Sobre una arquitectura base añadimos cuatro componentes: una capa con una restricción de dominio (ratio de endeudamiento saturado por un exponente entrenable), una función de coste que penaliza la dependencia estadística entre la predicción y el género, una búsqueda de topología con Keras Tuner sobre la frontera precisión–equidad, y una estimación de incertidumbre por MC-Dropout. El modelo de compromiso reduce la brecha de género un 72 % a cambio de menos de un punto de AUC en test, y su varianza aumenta cuando faltan las fuentes externas, lo que permite señalar las decisiones menos fiables para revisión.</p>
+
+    <h3 class="lbl">Datos del trabajo</h3>
+    <table class="facts">
+      <tr><td class="k">Dataset</td><td>Home Credit Default Risk — 307.511 registros × 122 variables</td></tr>
+      <tr><td class="k">Variable objetivo</td><td><code>TARGET</code> — impago (1) frente a pago a tiempo (0)</td></tr>
+      <tr><td class="k">Variable sensible</td><td><code>CODE_GENDER</code> — no se usa como entrada del modelo</td></tr>
+      <tr><td class="k">Componentes</td><td>Capa custom (DTI) · FAIR loss (corr²) · Keras Tuner · MC-Dropout</td></tr>
+    </table>
+
+    <div class="authors">
+      <div class="lab">Autores</div>
+      <div class="names">Gonzalo de Ramón · Alonso Díaz · Oscar Romero</div>
+    </div>
+  </div>
+
+  <div class="footband">
+    Taller B4-T1 — <b>Diseño de Redes Confiables (Justicia e Incertidumbre)</b><br>
+    Repositorio GitHub con los notebooks 01–07 reproducibles que generan todas las figuras y tablas de este informe.
+  </div>
+</div>
+
+<!-- 02_contexto.html -->
+<section>
+  <div class="section-head"><span class="num">1</span><h2>Contexto y datos</h2><span class="tag">EDA</span></div>
+
+  <p class="lead">Construimos un clasificador de riesgo de crédito y le añadimos control de equidad de género e incertidumbre. El resultado principal: recortamos el <strong>72 %</strong> del gap entre hombres y mujeres pagando menos de 1 pp de AUC.</p>
+
+  <p>El problema es conceder crédito a clientes con poco historial financiero. Predecimos <code>TARGET</code> (1 = dificultades de pago) a partir de ingresos, anualidades y las tres fuentes de score externo <code>EXT_SOURCE_1/2/3</code>. Decidir bien y decidir de forma justa pesan lo mismo aquí.</p>
+
+  <p>Los datos están muy desbalanceados: solo el <strong>8,07 %</strong> de los clientes impaga, una proporción de 11,4:1. Eso descarta la accuracy, porque un clasificador que siempre prediga "paga" acierta el 91,93 % sin aprender nada. Medimos con AUC-ROC, que ordena el riesgo con independencia del umbral.</p>
+
+  <p>El gap bruto de impago real entre hombres y mujeres es de <strong>+3,14 pp</strong> (10,14 % frente a 7,00 %). Importa por dónde se cuela en el modelo. <code>EXT_SOURCE_1</code>, la variable más predictiva, correlaciona −0,31 con el género y actúa de proxy: en el subconjunto donde está presente, el gap baja de +2,51 a +0,02 pp al controlar por ella. Por eso borrar el género no arregla el sesgo. Conviene no restar las dos cifras, porque son universos distintos, pero la conclusión cualitativa se sostiene en ambos.</p>
+
+  <p>Las fuentes externas tienen muchos nulos: <strong>56,4 %</strong> en <code>EXT_SOURCE_1</code>, 19,8 % en <code>EXT_SOURCE_2</code> y 0,2 % en <code>EXT_SOURCE_3</code>. La ausencia no es ruido. Predice el impago casi de forma monótona: con ninguna fuente ausente es del 7,3 %, con una sube al 8,2 % y con dos llega al 9,9 %. El preprocesado conserva esa señal con flags explícitos en lugar de limitarse a imputar.</p>
+</section>
+
+<!-- 03_metodologia.html -->
+<section>
+  <div class="section-head"><span class="num">2</span><h2>Metodología y modelo base</h2><span class="tag">PIPELINE</span></div>
+
+  <p class="lead">El pipeline está pensado para evitar fugas de información y el modelo base fija la línea de rendimiento que las tareas posteriores tienen que batir.</p>
+
+  <p>Partimos de un split estratificado por TARGET 70/15/15 (semilla 42). Todos los estadísticos se calculan solo sobre train: medianas de imputación, topes de winsorización y escalado, de modo que val y test nunca contaminan el ajuste. Los tamaños finales son <strong>train 215.254, val 46.126 y test 46.127</strong>.</p>
+
+  <ul class="clean">
+    <li>Imputación por mediana (gana a KNN: AUC val 0,728 vs 0,725 y unas 300x más barata).</li>
+    <li>Flags de ausencia creados antes de imputar, para no perder la señal de los nulos.</li>
+    <li>Winsorización al p99,9 del ingreso, <code>log1p</code> en ingreso/crédito/anualidad y edad en años.</li>
+    <li>Quedan <strong>13 features</strong> (8 continuas y 5 flags).</li>
+  </ul>
+
+  <p>La arquitectura es un MLP compacto: <code>Dense(64,relu) → Dropout(0,3) → Dense(32,relu) → Dropout(0,3) → Dense(1,sigmoid)</code>. Se entrena con BCE y Adam, monitorizando AUC, con <code>class_weight</code> balanceado <code>{0: 0,544, 1: 6,19}</code> para compensar el desbalance. El dropout 0,3 va fijo a propósito: además de regularizar, es la palanca que reutilizan el tuner (Tarea 3) y la estimación de incertidumbre por MC-Dropout (Tarea 4), que necesita dropout activo en inferencia.</p>
+
+  <p>En test, la base marca <strong>AUC 0,7437</strong>, accuracy 0,690 (umbral 0,5 provisional) y un group gap de <strong>5,358 pp</strong>. Ese es el punto que las tareas de justicia deben mejorar sin perder demasiada precisión.</p>
+
+  <figure>
+    <div class="montage">
+      <img src="assets/03_base__curva_loss.png" alt="Loss base">
+      <img src="assets/04_custom__curva_loss.png" alt="Loss capa custom">
+      <img src="assets/06_tuner__curva_loss_mejor.png" alt="Loss modelo FAIR">
+    </div>
+    <figcaption><b>Fig 1.</b> Curvas de pérdida (train/val) de los tres entrenamientos finales: base (izq.), modelo con capa custom (centro) y modelo FAIR de compromiso (der.). Las tres convergen de forma estable, sin sobreajuste apreciable.</figcaption>
+  </figure>
+</section>
+
+<!-- 04_tarea1.html -->
+<section>
+  <div class="section-head">
+    <span class="num">3</span>
+    <h2>Tarea 1: capa custom</h2>
+    <span class="tag">CAPA CUSTOM</span>
+  </div>
+
+  <p class="lead">Inyectamos conocimiento de dominio en la red con una capa Keras a medida que calcula el ratio de endeudamiento y lo satura con un exponente entrenable.</p>
+
+  <p>El ratio de endeudamiento (DTI) compara lo que el cliente paga periódicamente con lo que ingresa. La capa lo implementa como <code>DTI = AMT_ANNUITY / (|AMT_INCOME_TOTAL| + ε)</code>, con <strong>ε = 0,25</strong> y recorte del cociente a ±5. Usamos el valor absoluto del ingreso porque, tras <code>log1p</code> y escalado, cerca de la mitad de los valores quedan negativos en torno a media cero. El epsilon es grande a propósito: con el ingreso ya escalado, <code>|income|</code> puede acercarse a cero y uno diminuto dispararía el ratio. El clip a ±5 mantiene la estabilidad numérica.</p>
+
+  <p>Sobre ese ratio aplicamos una saturación de potencia con signo, <code>sign(x)·(|x|+1e-7)^p</code>. El signo es necesario porque <code>x^p</code> con <code>p</code> no entero y <code>x&lt;0</code> da NaN, y las entradas llegan estandarizadas. El exponente <code>p</code> es un único peso escalar entrenable, inicializado en <strong>1,0</strong> (la capa arranca como la identidad) y acotado a <code>[0,1 ; 3]</code>. Con <code>p&lt;1</code> comprime la cola, con <code>p&gt;1</code> la expande. La capa concatena el DTI saturado como columna extra, pasando de 13 a 14 features, y se coloca la primera, antes de las densas.</p>
+
+  <p>La elección la respalda el EDA. El ingreso tiene un skew de unos <strong>392</strong>, con una cola larguísima que una saturación <code>p&lt;1</code> ayuda a aplanar, y el DTI guarda una relación no monótona con el impago que una división explícita captura sin gastar parámetros. En la práctica la red converge a <code>p ≈ 0,87</code>, sin tocar los topes, con AUC test 0,7437.</p>
+
+  <figure class="arch">
+    <img src="assets/report__arquitectura_custom.png" alt="Arquitectura de la capa custom DTI">
+    <figcaption><b>Fig 2.</b> La capa <code>DebtRatioSaturatingLayer</code> va primera: calcula el DTI, lo satura con <code>sign(x)·|x|ᵖ</code> y concatena la columna (13 + 1 = 14 features) antes del bloque denso.</figcaption>
+  </figure>
+
+  <p class="nota">La capa es correcta y estable, pero no mejora el AUC ni reduce el gap respecto a la base. Opera sobre features que ya pasaron por <code>log1p</code>, winsorización y escalado, así que su DTI es un proxy del ratio en escala transformada, no el cociente euros/euros crudo. Su aportación es metodológica: muestra cómo se construye una restricción matemática entrenable dentro de Keras.</p>
+</section>
+
+<!-- 05_tarea2.html -->
+<section>
+  <div class="section-head">
+    <span class="num">4</span>
+    <h2>Tarea 2: FAIR loss</h2>
+    <span class="tag">FAIR LOSS</span>
+  </div>
+
+  <p class="lead">Como borrar el género no quita el sesgo, penalizamos la dependencia estadística entre la predicción y el género durante el entrenamiento.</p>
+
+  <p>La idea cabe en una loss aumentada: <code>L = BCE(ŷ, TARGET) + λ·D(ŷ, CODE_GENDER)</code>. El primer término es la clasificación; el segundo, una medida de dependencia <code>D</code> entre la predicción y el género, pesada por <code>λ</code>. Ese <code>λ</code> funciona como multiplicador de Lagrange: con <code>λ=0</code> recuperamos la base, y al subirlo forzamos independencia a costa de precisión. Barrerlo traza la frontera de Pareto.</p>
+
+  <p><code>D</code> opera sobre la probabilidad post-sigmoide, no sobre el logit: queda acotada en [0,1] y es coherente con el group gap. El género solo se usa en entrenamiento, nunca como input: viaja empaquetado junto al target como <code>y_true = [TARGET, S]</code>, que la loss desempaqueta dentro. En inferencia desaparece.</p>
+
+  <p>Probamos tres medidas de dependencia:</p>
+  <ul class="clean">
+    <li><strong>corr²</strong>: correlación de Pearson al cuadrado. Con género binario capta el desplazamiento de medias entre grupos. Coste <code>O(n)</code>, solo momentos del batch.</li>
+    <li><strong>HSIC</strong>: dependencia de cualquier forma con kernels RBF, pero exige matrices <code>n×n</code> y con S binaria se diluye con el desbalance (registra ~0,02).</li>
+    <li><strong>MMD²</strong>: compara <code>P(ŷ|S=1)</code> contra <code>P(ŷ|S=0)</code> como problema de dos muestras; también opera sobre kernel <code>n×n</code>.</li>
+  </ul>
+
+  <p>Adoptamos <strong>corr²</strong> como penalización principal. Para un atributo binario la diferencia entre grupos es básicamente un desplazamiento de medias, que es justo lo que mueve el gap, y corr² lo recoge bien con coste lineal. HSIC y MMD necesitan matrices <code>n×n</code> inviables sobre los 46k registros de validación sin submuestrear. Un apunte de contexto: en el barrido aislado (NB05) ganó MMD con λ=10, mientras que en el integrado de la Tarea 3, con backbone fijo y <code>class_weight</code>, el compromiso fue <strong>corr² λ=5</strong>. Son experimentos distintos, así que la mejor medida cambia con ellos.</p>
+
+  <p class="nota">HSIC y MMD usan un ancho de banda σ fijo por defecto, sin la heurística de la mediana de distancias. No afecta al compromiso final, que es corr², pero afinar los kernels exigiría implementarla.</p>
+</section>
+
+<!-- 06_tarea3.html -->
+<section>
+  <div class="section-head">
+    <span class="num">5</span>
+    <h2>Tarea 3 · AutoML y frontera de Pareto</h2>
+    <span class="tag">KERAS TUNER</span>
+  </div>
+
+  <p class="lead">¿Cuánto cuesta ser justo? Para responderlo dejamos que un buscador automático fije la arquitectura y luego recorrimos la frontera precisión-justicia entera.</p>
+
+  <p>Comparamos <strong>RandomSearch</strong> y Hyperband en igualdad de condiciones: mismo espacio, mismo λ piloto, <code>objective=val_auc</code> sobre validación y sin tocar test. Quedaron en empate técnico (Hyperband 0,7374 en 281 s, RandomSearch 0,7379 en 257 s). Como la diferencia cae por debajo de 0,001, la lógica se queda con la opción más barata, RandomSearch. Coincide con lo que ya documentaron Bergstra y Bengio (2012): la búsqueda aleatoria rinde sorprendentemente bien.</p>
+
+  <h3>El espacio de búsqueda</h3>
+  <p>El buscador explora cinco palancas:</p>
+  <ul class="clean">
+    <li>nº de capas <code>∈ [1, 3]</code></li>
+    <li>unidades por capa <code>∈ [16, 128]</code>, paso 16</li>
+    <li>dropout <code>∈ [0,1 ; 0,5]</code>, siempre presente</li>
+    <li>learning rate <code>∈ [1e-4, 1e-2]</code>, escala logarítmica</li>
+    <li>activación <code>{relu, tanh}</code></li>
+  </ul>
+  <p>El dropout nunca vale cero porque alimenta el MC-Dropout de la Tarea 4. La penalización <code>λ_fair</code> queda fuera del tuner, como eje externo: el buscador optimiza un solo escalar y la frontera hay que trazarla aparte recorriendo λ. El ganador es deliberadamente sencillo: <strong>1 capa, 64 unidades, dropout 0,3, relu, lr≈0,0072</strong>. Añadir profundidad no compraba AUC.</p>
+
+  <h3>La frontera de Pareto</h3>
+  <p>La frontera se traza con la topología fija del backbone y un barrido sobre λ repetido con 3 semillas (42, 7, 123), reportando media ± desviación típica. En el eje X va la dependencia FAIR y en el Y la AUC de validación; los puntos salen no dominados.</p>
+
+  <figure class="fig-star med">
+    <img src="assets/06_tuner__pareto_3medidas.png" alt="Frontera de Pareto de las tres medidas">
+    <figcaption><b>Fig 3.</b> Frontera de Pareto (3 semillas, media ± std) para corr², HSIC y MMD. Eje X: dependencia FAIR (group gap); eje Y: AUC de validación. La estrella marca el compromiso elegido (corr², λ=5).</figcaption>
+  </figure>
+
+  <p>El precio resulta barato. El group gap baja un <strong>−72 %</strong> (5,615 → 1,568 pp) mientras la AUC cede solo −0,59 pp frente a la base comparable del tuner (misma topología y mismo <code>class_weight</code>), o −0,92 pp si la referencia es la base 03 de la sección 2. El equalized-odds mejora en las dos patas: ΔTPR pasa de 8,28 a 1,82 pp y ΔFPR de 11,08 a 3,35 pp. Gana <strong>corr² con λ=5</strong> por el criterio de presupuesto (coste en AUC ≤ 1 pp y, dentro de ese margen, mínimo gap). Con género binario la dependencia es un desplazamiento de medias, y la penalización lineal de corr² compra más justicia por punto de AUC que HSIC o MMD.</p>
+
+  <figure class="med">
+    <img src="assets/06_tuner__equalized_odds_base_vs_fair.png" alt="Equalized odds base frente a FAIR">
+    <figcaption><b>Fig 4.</b> Equalized-odds en test, base (λ=0) frente al modelo FAIR (corr², λ=5). Group gap, ΔTPR y ΔFPR caen todos a menos de la mitad.</figcaption>
+  </figure>
+</section>
+
+<!-- 07_tarea4.html -->
+<section>
+  <div class="section-head">
+    <span class="num">6</span>
+    <h2>Tarea 4 · Incertidumbre</h2>
+    <span class="tag">MC-DROPOUT</span>
+  </div>
+
+  <p class="lead">Un modelo de crédito debería indicar cuándo su predicción es menos fiable.</p>
+
+  <p>Aplicamos <strong>MC-Dropout con T=100</strong> sobre el modelo de compromiso de la Tarea 3, dejando el dropout 0,3 activo en inferencia (<code>training=True</code>). No añadimos dropout nuevo. Por fila salen dos números: la probabilidad de consenso <code>p̄</code>, que fija la clase, y la varianza <code>Var[p]</code>, que mide la incertidumbre epistémica. Promediar las 100 pasadas no degrada la precisión: el AUC de <code>p̄</code> es <strong>0,7346</strong>, casi el 0,7347 heredado. T=100 es holgado porque la curva de estabilidad se aplana mucho antes.</p>
+
+  <h3>¿Más duda donde falta EXT_SOURCE?</h3>
+  <p>Globalmente la relación es débil: el Spearman entre <code>Var[p]</code> y el número de fuentes externas ausentes es de solo +0,02. Pero en el extremo, sin ninguna fuente externa, la varianza media sube de 0,00152 a <strong>0,00222</strong>, un +47 %. La duda crece, sí, justo donde la entrada es más pobre.</p>
+
+  <figure class="med">
+    <img src="assets/07_incert__varianza_vs_n_ext_missing.png" alt="Varianza frente a fuentes externas ausentes">
+    <figcaption><b>Fig 5.</b> Var[p] media según el nº de fuentes externas ausentes. El repunte solo aparece en el extremo de 3 ausentes (n=27), de ahí que la correlación global sea casi nula.</figcaption>
+  </figure>
+
+  <p class="nota">Ese repunte se apoya en un grupo de n=27 filas de las 46.127 de test, así que señala una tendencia, no una cifra fina.</p>
+
+  <figure class="med">
+    <img src="assets/07_incert__varianza_buen_vs_mal_pagador.png" alt="Varianza buen vs mal pagador">
+    <figcaption><b>Fig 6.</b> Distribución de Var[p] para buen pagador (y=0) frente a mal pagador (y=1). Las dos curvas casi coinciden: la incertidumbre no la marca la etiqueta.</figcaption>
+  </figure>
+
+  <h3>E3 y los demás controles</h3>
+  <p>El entregable obligatorio compara la varianza de buenos pagadores y malos, y salen casi iguales (0,00148 frente a 0,00146). Lo que dispara la duda es la pobreza de la información, no si el cliente paga. La incertidumbre aleatoria <code>p(1−p)</code> y la epistémica <code>Var[p]</code> se relacionan pero no coinciden (Spearman −0,58). La varianza sirve además de alarma: el 10 % de filas con más <code>Var[p]</code> acumula más error real (14,7 % frente a 12,9 %), buen criterio para derivar expedientes a revisión humana. El umbral óptimo por coste (con <code>C_FN=5</code>) sale en <strong>τ=0,66</strong>, por encima de 0,5, porque el <code>class_weight</code> balanceado infla las probabilidades.</p>
+</section>
+
+<!-- 08_resultados.html -->
+<section>
+  <div class="section-head">
+    <span class="num">7</span>
+    <h2>Resultados · Base vs mejor FAIR</h2>
+    <span class="tag">EVALUACIÓN EN TEST</span>
+  </div>
+
+  <p class="lead">La prueba final se hace en test, 46.127 registros que ningún modelo vio durante el entrenamiento ni el ajuste; la tabla E5 enfrenta la línea base a batir con el modelo FAIR de compromiso.</p>
+
+  <table class="data">
+    <thead>
+      <tr><th>Modelo</th><th>medida</th><th>λ</th><th>AUC test</th><th>group gap (pp)</th><th>ΔTPR (pp)</th><th>ΔFPR (pp)</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>base 03 (MLP sin FAIR)</td><td>—</td><td>—</td><td>0,7437</td><td>5,358</td><td>—</td><td>—</td></tr>
+      <tr><td>base tuner (λ=0, +capa custom)</td><td>—</td><td>0</td><td>0,7404</td><td>5,615</td><td>8,282</td><td>11,076</td></tr>
+      <tr class="best"><td><span class="star">★</span> mejor FAIR (corr², λ=5)</td><td>corr²</td><td>5</td><td>0,7345</td><td>1,568</td><td>1,817</td><td>3,349</td></tr>
+    </tbody>
+  </table>
+
+
+  <p>Frente a la base comparable del tuner (misma topología y mismo <code>class_weight</code>), activar la penalización FAIR recorta el group gap de 5,615 a 1,568 pp, un <strong>−72 %</strong>, a cambio de −0,59 pp de AUC. Contra la base 03 de la sección 2 el coste sube a −0,92 pp, igualmente pequeño. El equalized-odds baja en las dos patas (ΔTPR 8,28→1,82 pp, ΔFPR 11,08→3,35 pp), así que hombres y mujeres reciben tasas más parejas de acierto y de falsa alarma. El <strong>mejor FAIR (corr², λ=5)</strong> es el que gana en test: casi tan preciso como el mejor clasificador puro y bastante más justo.</p>
+</section>
+
+<!-- 09_conclusiones.html -->
+<section>
+  <div class="section-head">
+    <span class="num">8</span>
+    <h2>Conclusiones y defensa</h2>
+    <span class="tag">CIERRE</span>
+  </div>
+
+  <p class="lead">El taller pedía un modelo de crédito que acierte, que no discrimine por género y que reconozca su propia incertidumbre.</p>
+
+  <h3>1 · Restricción matemática y métrica de dependencia</h3>
+  <p>La restricción vive en la capa <code>DebtRatioSaturatingLayer</code>: un ratio deuda-ingreso saturado con <code>sign(x)·(|x|+1e-7)^p</code>, cuyo exponente <code>p</code> es entrenable y queda acotado a [0,1 ; 3] (init 1,0, la identidad). Un solo peso, dentro de un rango con sentido económico. La dependencia que entra en la loss es <strong>corr²</strong> sobre la probabilidad post-sigmoide: con género binario capta el desplazamiento de medias que mueve el gap, con coste O(n).</p>
+
+  <h3>2 · Cuánto cuesta ser justo</h3>
+  <p>Poco. El modelo de compromiso (corr², λ=5) recorta el group gap un 72 % y solo pierde medio punto de AUC frente a la base comparable del tuner, algo menos de un punto frente a la base 03. La mejora se confirma en equalized-odds, que cae en sus dos componentes.</p>
+
+  <h3>3 · Incertidumbre donde falta EXT_SOURCE</h3>
+  <p>La relación global es débil (Spearman +0,02), pero sin ninguna fuente externa la varianza de MC-Dropout sube un 47 %. Un control limpio lo apoya: buenos y malos pagadores tienen casi la misma varianza, así que la duda la marca la calidad de la entrada y no la etiqueta.</p>
+
+  <p class="nota">Limitaciones: la capa custom es correcta pero no mejora el AUC ni el gap, porque opera sobre features ya transformadas; HSIC y MMD usan un σ fijo sin la heurística de la mediana; y el repunte del 47 % se apoya en solo n=27 registros.</p>
+
+  <p>Queda un clasificador que ajusta bien, no discrimina por género y reconoce cuándo no está seguro.</p>
+
+  <p class="footer-note">Repositorio GitHub · Notebooks 01–07 reproducibles · Máster MIAX</p>
+</section>
+</body>
+</html>

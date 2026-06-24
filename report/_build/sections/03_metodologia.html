@@ -1,0 +1,27 @@
+<section>
+  <div class="section-head"><span class="num">2</span><h2>Metodología y modelo base</h2><span class="tag">PIPELINE</span></div>
+
+  <p class="lead">El pipeline está pensado para evitar fugas de información y el modelo base fija la línea de rendimiento que las tareas posteriores tienen que batir.</p>
+
+  <p>Partimos de un split estratificado por TARGET 70/15/15 (semilla 42). Todos los estadísticos se calculan solo sobre train: medianas de imputación, topes de winsorización y escalado, de modo que val y test nunca contaminan el ajuste. Los tamaños finales son <strong>train 215.254, val 46.126 y test 46.127</strong>.</p>
+
+  <ul class="clean">
+    <li>Imputación por mediana (gana a KNN: AUC val 0,728 vs 0,725 y unas 300x más barata).</li>
+    <li>Flags de ausencia creados antes de imputar, para no perder la señal de los nulos.</li>
+    <li>Winsorización al p99,9 del ingreso, <code>log1p</code> en ingreso/crédito/anualidad y edad en años.</li>
+    <li>Quedan <strong>13 features</strong> (8 continuas y 5 flags).</li>
+  </ul>
+
+  <p>La arquitectura es un MLP compacto: <code>Dense(64,relu) → Dropout(0,3) → Dense(32,relu) → Dropout(0,3) → Dense(1,sigmoid)</code>. Se entrena con BCE y Adam, monitorizando AUC, con <code>class_weight</code> balanceado <code>{0: 0,544, 1: 6,19}</code> para compensar el desbalance. El dropout 0,3 va fijo a propósito: además de regularizar, es la palanca que reutilizan el tuner (Tarea 3) y la estimación de incertidumbre por MC-Dropout (Tarea 4), que necesita dropout activo en inferencia.</p>
+
+  <p>En test, la base marca <strong>AUC 0,7437</strong>, accuracy 0,690 (umbral 0,5 provisional) y un group gap de <strong>5,358 pp</strong>. Ese es el punto que las tareas de justicia deben mejorar sin perder demasiada precisión.</p>
+
+  <figure>
+    <div class="montage">
+      <img src="assets/03_base__curva_loss.png" alt="Loss base">
+      <img src="assets/04_custom__curva_loss.png" alt="Loss capa custom">
+      <img src="assets/06_tuner__curva_loss_mejor.png" alt="Loss modelo FAIR">
+    </div>
+    <figcaption><b>Fig 1.</b> Curvas de pérdida (train/val) de los tres entrenamientos finales: base (izq.), modelo con capa custom (centro) y modelo FAIR de compromiso (der.). Las tres convergen de forma estable, sin sobreajuste apreciable.</figcaption>
+  </figure>
+</section>

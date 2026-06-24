@@ -1,0 +1,13 @@
+<section>
+  <div class="section-head"><span class="num">1</span><h2>Contexto y datos</h2><span class="tag">EDA</span></div>
+
+  <p class="lead">Construimos un clasificador de riesgo de crédito y le añadimos control de equidad de género e incertidumbre. El resultado principal: recortamos el <strong>72 %</strong> del gap entre hombres y mujeres pagando menos de 1 pp de AUC.</p>
+
+  <p>El problema es conceder crédito a clientes con poco historial financiero. Predecimos <code>TARGET</code> (1 = dificultades de pago) a partir de ingresos, anualidades y las tres fuentes de score externo <code>EXT_SOURCE_1/2/3</code>. Decidir bien y decidir de forma justa pesan lo mismo aquí.</p>
+
+  <p>Los datos están muy desbalanceados: solo el <strong>8,07 %</strong> de los clientes impaga, una proporción de 11,4:1. Eso descarta la accuracy, porque un clasificador que siempre prediga "paga" acierta el 91,93 % sin aprender nada. Medimos con AUC-ROC, que ordena el riesgo con independencia del umbral.</p>
+
+  <p>El gap bruto de impago real entre hombres y mujeres es de <strong>+3,14 pp</strong> (10,14 % frente a 7,00 %). Importa por dónde se cuela en el modelo. <code>EXT_SOURCE_1</code>, la variable más predictiva, correlaciona −0,31 con el género y actúa de proxy: en el subconjunto donde está presente, el gap baja de +2,51 a +0,02 pp al controlar por ella. Por eso borrar el género no arregla el sesgo. Conviene no restar las dos cifras, porque son universos distintos, pero la conclusión cualitativa se sostiene en ambos.</p>
+
+  <p>Las fuentes externas tienen muchos nulos: <strong>56,4 %</strong> en <code>EXT_SOURCE_1</code>, 19,8 % en <code>EXT_SOURCE_2</code> y 0,2 % en <code>EXT_SOURCE_3</code>. La ausencia no es ruido. Predice el impago casi de forma monótona: con ninguna fuente ausente es del 7,3 %, con una sube al 8,2 % y con dos llega al 9,9 %. El preprocesado conserva esa señal con flags explícitos en lugar de limitarse a imputar.</p>
+</section>

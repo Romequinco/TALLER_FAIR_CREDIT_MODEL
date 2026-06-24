@@ -1,0 +1,34 @@
+<div class="cover">
+  <div class="topband">
+    <span>Máster MIAX · IA aplicada a los mercados</span>
+    <span class="r">Bloque 4 · Tarea 1</span>
+  </div>
+
+  <div class="body">
+    <div class="eyebrow">Documento de entrega · Junio de 2026</div>
+    <h1>Redes neuronales confiables para scoring de crédito: equidad de género e incertidumbre</h1>
+    <div class="sub">Diseño, entrenamiento y auditoría sobre el dataset Home Credit Default Risk</div>
+    <hr class="gold">
+
+    <h3 class="lbl">Resumen</h3>
+    <p class="abstract">Entrenamos un clasificador neuronal para estimar el riesgo de impago en solicitantes con poco historial crediticio. Sobre una arquitectura base añadimos cuatro componentes: una capa con una restricción de dominio (ratio de endeudamiento saturado por un exponente entrenable), una función de coste que penaliza la dependencia estadística entre la predicción y el género, una búsqueda de topología con Keras Tuner sobre la frontera precisión–equidad, y una estimación de incertidumbre por MC-Dropout. El modelo de compromiso reduce la brecha de género un 72 % a cambio de menos de un punto de AUC en test, y su varianza aumenta cuando faltan las fuentes externas, lo que permite señalar las decisiones menos fiables para revisión.</p>
+
+    <h3 class="lbl">Datos del trabajo</h3>
+    <table class="facts">
+      <tr><td class="k">Dataset</td><td>Home Credit Default Risk — 307.511 registros × 122 variables</td></tr>
+      <tr><td class="k">Variable objetivo</td><td><code>TARGET</code> — impago (1) frente a pago a tiempo (0)</td></tr>
+      <tr><td class="k">Variable sensible</td><td><code>CODE_GENDER</code> — no se usa como entrada del modelo</td></tr>
+      <tr><td class="k">Componentes</td><td>Capa custom (DTI) · FAIR loss (corr²) · Keras Tuner · MC-Dropout</td></tr>
+    </table>
+
+    <div class="authors">
+      <div class="lab">Autores</div>
+      <div class="names">Gonzalo de Ramón · Alonso Díaz · Oscar Romero</div>
+    </div>
+  </div>
+
+  <div class="footband">
+    Taller B4-T1 — <b>Diseño de Redes Confiables (Justicia e Incertidumbre)</b><br>
+    Repositorio GitHub con los notebooks 01–07 reproducibles que generan todas las figuras y tablas de este informe.
+  </div>
+</div>

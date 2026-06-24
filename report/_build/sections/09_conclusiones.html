@@ -1,0 +1,24 @@
+<section>
+  <div class="section-head">
+    <span class="num">8</span>
+    <h2>Conclusiones y defensa</h2>
+    <span class="tag">CIERRE</span>
+  </div>
+
+  <p class="lead">El taller pedía un modelo de crédito que acierte, que no discrimine por género y que reconozca su propia incertidumbre.</p>
+
+  <h3>1 · Restricción matemática y métrica de dependencia</h3>
+  <p>La restricción vive en la capa <code>DebtRatioSaturatingLayer</code>: un ratio deuda-ingreso saturado con <code>sign(x)·(|x|+1e-7)^p</code>, cuyo exponente <code>p</code> es entrenable y queda acotado a [0,1 ; 3] (init 1,0, la identidad). Un solo peso, dentro de un rango con sentido económico. La dependencia que entra en la loss es <strong>corr²</strong> sobre la probabilidad post-sigmoide: con género binario capta el desplazamiento de medias que mueve el gap, con coste O(n).</p>
+
+  <h3>2 · Cuánto cuesta ser justo</h3>
+  <p>Poco. El modelo de compromiso (corr², λ=5) recorta el group gap un 72 % y solo pierde medio punto de AUC frente a la base comparable del tuner, algo menos de un punto frente a la base 03. La mejora se confirma en equalized-odds, que cae en sus dos componentes.</p>
+
+  <h3>3 · Incertidumbre donde falta EXT_SOURCE</h3>
+  <p>La relación global es débil (Spearman +0,02), pero sin ninguna fuente externa la varianza de MC-Dropout sube un 47 %. Un control limpio lo apoya: buenos y malos pagadores tienen casi la misma varianza, así que la duda la marca la calidad de la entrada y no la etiqueta.</p>
+
+  <p class="nota">Limitaciones: la capa custom es correcta pero no mejora el AUC ni el gap, porque opera sobre features ya transformadas; HSIC y MMD usan un σ fijo sin la heurística de la mediana; y el repunte del 47 % se apoya en solo n=27 registros.</p>
+
+  <p>Queda un clasificador que ajusta bien, no discrimina por género y reconoce cuándo no está seguro.</p>
+
+  <p class="footer-note">Repositorio GitHub · Notebooks 01–07 reproducibles · Máster MIAX</p>
+</section>

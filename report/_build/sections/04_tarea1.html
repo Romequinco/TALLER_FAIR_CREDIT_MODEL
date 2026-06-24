@@ -1,0 +1,22 @@
+<section>
+  <div class="section-head">
+    <span class="num">3</span>
+    <h2>Tarea 1: capa custom</h2>
+    <span class="tag">CAPA CUSTOM</span>
+  </div>
+
+  <p class="lead">Inyectamos conocimiento de dominio en la red con una capa Keras a medida que calcula el ratio de endeudamiento y lo satura con un exponente entrenable.</p>
+
+  <p>El ratio de endeudamiento (DTI) compara lo que el cliente paga periódicamente con lo que ingresa. La capa lo implementa como <code>DTI = AMT_ANNUITY / (|AMT_INCOME_TOTAL| + ε)</code>, con <strong>ε = 0,25</strong> y recorte del cociente a ±5. Usamos el valor absoluto del ingreso porque, tras <code>log1p</code> y escalado, cerca de la mitad de los valores quedan negativos en torno a media cero. El epsilon es grande a propósito: con el ingreso ya escalado, <code>|income|</code> puede acercarse a cero y uno diminuto dispararía el ratio. El clip a ±5 mantiene la estabilidad numérica.</p>
+
+  <p>Sobre ese ratio aplicamos una saturación de potencia con signo, <code>sign(x)·(|x|+1e-7)^p</code>. El signo es necesario porque <code>x^p</code> con <code>p</code> no entero y <code>x&lt;0</code> da NaN, y las entradas llegan estandarizadas. El exponente <code>p</code> es un único peso escalar entrenable, inicializado en <strong>1,0</strong> (la capa arranca como la identidad) y acotado a <code>[0,1 ; 3]</code>. Con <code>p&lt;1</code> comprime la cola, con <code>p&gt;1</code> la expande. La capa concatena el DTI saturado como columna extra, pasando de 13 a 14 features, y se coloca la primera, antes de las densas.</p>
+
+  <p>La elección la respalda el EDA. El ingreso tiene un skew de unos <strong>392</strong>, con una cola larguísima que una saturación <code>p&lt;1</code> ayuda a aplanar, y el DTI guarda una relación no monótona con el impago que una división explícita captura sin gastar parámetros. En la práctica la red converge a <code>p ≈ 0,87</code>, sin tocar los topes, con AUC test 0,7437.</p>
+
+  <figure class="arch">
+    <img src="assets/report__arquitectura_custom.png" alt="Arquitectura de la capa custom DTI">
+    <figcaption><b>Fig 2.</b> La capa <code>DebtRatioSaturatingLayer</code> va primera: calcula el DTI, lo satura con <code>sign(x)·|x|ᵖ</code> y concatena la columna (13 + 1 = 14 features) antes del bloque denso.</figcaption>
+  </figure>
+
+  <p class="nota">La capa es correcta y estable, pero no mejora el AUC ni reduce el gap respecto a la base. Opera sobre features que ya pasaron por <code>log1p</code>, winsorización y escalado, así que su DTI es un proxy del ratio en escala transformada, no el cociente euros/euros crudo. Su aportación es metodológica: muestra cómo se construye una restricción matemática entrenable dentro de Keras.</p>
+</section>

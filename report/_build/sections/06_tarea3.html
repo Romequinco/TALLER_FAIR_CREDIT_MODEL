@@ -1,0 +1,37 @@
+<section>
+  <div class="section-head">
+    <span class="num">5</span>
+    <h2>Tarea 3 · AutoML y frontera de Pareto</h2>
+    <span class="tag">KERAS TUNER</span>
+  </div>
+
+  <p class="lead">¿Cuánto cuesta ser justo? Para responderlo dejamos que un buscador automático fije la arquitectura y luego recorrimos la frontera precisión-justicia entera.</p>
+
+  <p>Comparamos <strong>RandomSearch</strong> y Hyperband en igualdad de condiciones: mismo espacio, mismo λ piloto, <code>objective=val_auc</code> sobre validación y sin tocar test. Quedaron en empate técnico (Hyperband 0,7374 en 281 s, RandomSearch 0,7379 en 257 s). Como la diferencia cae por debajo de 0,001, la lógica se queda con la opción más barata, RandomSearch. Coincide con lo que ya documentaron Bergstra y Bengio (2012): la búsqueda aleatoria rinde sorprendentemente bien.</p>
+
+  <h3>El espacio de búsqueda</h3>
+  <p>El buscador explora cinco palancas:</p>
+  <ul class="clean">
+    <li>nº de capas <code>∈ [1, 3]</code></li>
+    <li>unidades por capa <code>∈ [16, 128]</code>, paso 16</li>
+    <li>dropout <code>∈ [0,1 ; 0,5]</code>, siempre presente</li>
+    <li>learning rate <code>∈ [1e-4, 1e-2]</code>, escala logarítmica</li>
+    <li>activación <code>{relu, tanh}</code></li>
+  </ul>
+  <p>El dropout nunca vale cero porque alimenta el MC-Dropout de la Tarea 4. La penalización <code>λ_fair</code> queda fuera del tuner, como eje externo: el buscador optimiza un solo escalar y la frontera hay que trazarla aparte recorriendo λ. El ganador es deliberadamente sencillo: <strong>1 capa, 64 unidades, dropout 0,3, relu, lr≈0,0072</strong>. Añadir profundidad no compraba AUC.</p>
+
+  <h3>La frontera de Pareto</h3>
+  <p>La frontera se traza con la topología fija del backbone y un barrido sobre λ repetido con 3 semillas (42, 7, 123), reportando media ± desviación típica. En el eje X va la dependencia FAIR y en el Y la AUC de validación; los puntos salen no dominados.</p>
+
+  <figure class="fig-star med">
+    <img src="assets/06_tuner__pareto_3medidas.png" alt="Frontera de Pareto de las tres medidas">
+    <figcaption><b>Fig 3.</b> Frontera de Pareto (3 semillas, media ± std) para corr², HSIC y MMD. Eje X: dependencia FAIR (group gap); eje Y: AUC de validación. La estrella marca el compromiso elegido (corr², λ=5).</figcaption>
+  </figure>
+
+  <p>El precio resulta barato. El group gap baja un <strong>−72 %</strong> (5,615 → 1,568 pp) mientras la AUC cede solo −0,59 pp frente a la base comparable del tuner (misma topología y mismo <code>class_weight</code>), o −0,92 pp si la referencia es la base 03 de la sección 2. El equalized-odds mejora en las dos patas: ΔTPR pasa de 8,28 a 1,82 pp y ΔFPR de 11,08 a 3,35 pp. Gana <strong>corr² con λ=5</strong> por el criterio de presupuesto (coste en AUC ≤ 1 pp y, dentro de ese margen, mínimo gap). Con género binario la dependencia es un desplazamiento de medias, y la penalización lineal de corr² compra más justicia por punto de AUC que HSIC o MMD.</p>
+
+  <figure class="med">
+    <img src="assets/06_tuner__equalized_odds_base_vs_fair.png" alt="Equalized odds base frente a FAIR">
+    <figcaption><b>Fig 4.</b> Equalized-odds en test, base (λ=0) frente al modelo FAIR (corr², λ=5). Group gap, ΔTPR y ΔFPR caen todos a menos de la mitad.</figcaption>
+  </figure>
+</section>

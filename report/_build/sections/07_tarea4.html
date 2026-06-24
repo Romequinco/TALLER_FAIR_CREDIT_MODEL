@@ -1,0 +1,29 @@
+<section>
+  <div class="section-head">
+    <span class="num">6</span>
+    <h2>Tarea 4 · Incertidumbre</h2>
+    <span class="tag">MC-DROPOUT</span>
+  </div>
+
+  <p class="lead">Un modelo de crédito debería indicar cuándo su predicción es menos fiable.</p>
+
+  <p>Aplicamos <strong>MC-Dropout con T=100</strong> sobre el modelo de compromiso de la Tarea 3, dejando el dropout 0,3 activo en inferencia (<code>training=True</code>). No añadimos dropout nuevo. Por fila salen dos números: la probabilidad de consenso <code>p̄</code>, que fija la clase, y la varianza <code>Var[p]</code>, que mide la incertidumbre epistémica. Promediar las 100 pasadas no degrada la precisión: el AUC de <code>p̄</code> es <strong>0,7346</strong>, casi el 0,7347 heredado. T=100 es holgado porque la curva de estabilidad se aplana mucho antes.</p>
+
+  <h3>¿Más duda donde falta EXT_SOURCE?</h3>
+  <p>Globalmente la relación es débil: el Spearman entre <code>Var[p]</code> y el número de fuentes externas ausentes es de solo +0,02. Pero en el extremo, sin ninguna fuente externa, la varianza media sube de 0,00152 a <strong>0,00222</strong>, un +47 %. La duda crece, sí, justo donde la entrada es más pobre.</p>
+
+  <figure class="med">
+    <img src="assets/07_incert__varianza_vs_n_ext_missing.png" alt="Varianza frente a fuentes externas ausentes">
+    <figcaption><b>Fig 5.</b> Var[p] media según el nº de fuentes externas ausentes. El repunte solo aparece en el extremo de 3 ausentes (n=27), de ahí que la correlación global sea casi nula.</figcaption>
+  </figure>
+
+  <p class="nota">Ese repunte se apoya en un grupo de n=27 filas de las 46.127 de test, así que señala una tendencia, no una cifra fina.</p>
+
+  <figure class="med">
+    <img src="assets/07_incert__varianza_buen_vs_mal_pagador.png" alt="Varianza buen vs mal pagador">
+    <figcaption><b>Fig 6.</b> Distribución de Var[p] para buen pagador (y=0) frente a mal pagador (y=1). Las dos curvas casi coinciden: la incertidumbre no la marca la etiqueta.</figcaption>
+  </figure>
+
+  <h3>E3 y los demás controles</h3>
+  <p>El entregable obligatorio compara la varianza de buenos pagadores y malos, y salen casi iguales (0,00148 frente a 0,00146). Lo que dispara la duda es la pobreza de la información, no si el cliente paga. La incertidumbre aleatoria <code>p(1−p)</code> y la epistémica <code>Var[p]</code> se relacionan pero no coinciden (Spearman −0,58). La varianza sirve además de alarma: el 10 % de filas con más <code>Var[p]</code> acumula más error real (14,7 % frente a 12,9 %), buen criterio para derivar expedientes a revisión humana. El umbral óptimo por coste (con <code>C_FN=5</code>) sale en <strong>τ=0,66</strong>, por encima de 0,5, porque el <code>class_weight</code> balanceado infla las probabilidades.</p>
+</section>

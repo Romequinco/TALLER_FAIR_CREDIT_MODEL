@@ -1,0 +1,104 @@
+/* ============================================================
+   Taller B4-T1 — Informe COMPACTO (~10 págs) · académico-financiero
+   Render: Microsoft Edge headless --print-to-pdf (A4)
+   ============================================================ */
+
+:root{
+  --navy:#0e2a47; --navy-2:#163a61; --steel:#3f5e7d; --slate:#5b6b7b;
+  --ink:#1c2733; --accent:#0f8b8d; --accent-2:#c8a24a; --good:#1b7a4b; --bad:#b23b3b;
+  --line:#d8e0e8; --soft:#f4f7fa; --soft-2:#eef3f8;
+}
+*{ box-sizing:border-box; }
+
+@page{ size:A4; margin:12mm 13mm 11mm 13mm; }
+@page cover{ margin:0; }
+
+html,body{ margin:0; padding:0; }
+body{
+  font-family:"Segoe UI","Calibri",-apple-system,system-ui,sans-serif;
+  color:var(--ink); font-size:9.2pt; line-height:1.32;
+  -webkit-print-color-adjust:exact; print-color-adjust:exact;
+}
+h1,h2,h3,h4{ font-family:"Georgia","Times New Roman",serif; color:var(--navy); line-height:1.15; }
+
+/* ---------- PORTADA ---------- */
+.cover{ page: cover; width:210mm; height:297mm; background:#fff; color:var(--ink);
+  display:flex; flex-direction:column; }
+.cover .topband{ background:var(--navy); color:#fff; padding:6mm 20mm; display:flex;
+  justify-content:space-between; align-items:center; font-size:9pt; letter-spacing:.14em; text-transform:uppercase; }
+.cover .topband .r{ color:var(--accent-2); }
+.cover .body{ flex:1 1 auto; padding:20mm 20mm 0 20mm; }
+.cover .eyebrow{ font-size:9.5pt; color:var(--steel); letter-spacing:.06em; text-transform:uppercase; margin-bottom:7mm; }
+.cover h1{ font-size:27pt; line-height:1.16; margin:0 0 5mm 0; color:var(--navy); }
+.cover .sub{ font-family:"Georgia",serif; font-style:italic; font-size:13pt; color:var(--steel); margin-bottom:8mm; }
+.cover hr.gold{ width:38mm; border:0; border-top:3px solid var(--accent-2); margin:0 0 7mm 0; }
+.cover h3.lbl{ font-size:10.5pt; color:var(--navy); text-transform:uppercase; letter-spacing:.1em;
+  margin:0 0 2mm 0; padding-bottom:1mm; border-bottom:1px solid var(--line); }
+.cover .abstract{ font-size:10pt; line-height:1.5; text-align:justify; color:var(--ink); margin:0 0 9mm 0; }
+.cover table.facts{ width:100%; border-collapse:collapse; font-size:9.4pt; margin:0 0 10mm 0; }
+.cover table.facts td{ padding:1.7mm 0; border-bottom:1px solid var(--line); vertical-align:top; }
+.cover table.facts td.k{ width:44mm; color:var(--steel); font-weight:600; }
+.cover .authors .lab{ font-size:8.5pt; text-transform:uppercase; letter-spacing:.12em; color:var(--steel); margin-bottom:1.5mm; }
+.cover .authors .names{ font-size:13.5pt; color:var(--navy); font-weight:600; font-family:"Georgia",serif; }
+.cover .footband{ background:var(--navy); color:#cfe0ee; padding:5mm 20mm; font-size:8.6pt; line-height:1.4; }
+.cover .footband b{ color:#fff; }
+
+/* ---------- SECCIONES (compactas, sin saltos) ---------- */
+section{ margin:0 0 3mm 0; }
+.section-head{ display:flex; align-items:center; gap:8px; margin:3mm 0 2mm 0; padding-bottom:1.4mm; border-bottom:1.6px solid var(--line); }
+.section-head .num{ flex:0 0 auto; width:22px; height:22px; border-radius:5px; background:var(--navy); color:#fff;
+  font-family:"Georgia",serif; font-weight:bold; display:flex; align-items:center; justify-content:center; font-size:11pt; }
+.section-head h2{ margin:0; font-size:15pt; }
+.section-head .tag{ margin-left:auto; font-size:7.4pt; letter-spacing:.1em; text-transform:uppercase; color:var(--accent);
+  border:1px solid var(--accent); border-radius:11px; padding:1px 8px; }
+
+h3{ font-size:10.5pt; margin:2.5mm 0 1mm 0; }
+p{ margin:0 0 2mm 0; text-align:justify; }
+p.lead{ font-size:10pt; color:var(--steel); margin-bottom:2mm; }
+p.nota{ font-size:8.4pt; font-style:italic; color:var(--slate); border-left:2.5px solid var(--accent-2);
+  padding:1mm 0 1mm 3mm; margin:2mm 0; background:#fbf8f0; text-align:left; }
+strong{ color:var(--navy-2); }
+code,.mono{ font-family:"Consolas","Courier New",monospace; font-size:8pt; background:var(--soft-2);
+  padding:0 3px; border-radius:3px; color:var(--navy-2); }
+a{ color:var(--accent); text-decoration:none; }
+
+ul.clean{ margin:1mm 0 2mm 0; padding-left:4.5mm; }
+ul.clean li{ margin-bottom:0.6mm; }
+ul.clean li::marker{ color:var(--accent); }
+
+/* ---------- FIGURAS (pequeñas) ---------- */
+figure{ margin:2mm 0; page-break-inside:avoid; text-align:center; }
+figure img{ max-width:100%; border:1px solid var(--line); border-radius:5px; background:#fff; }
+figure.arch img{ max-height:78mm; width:auto; }
+figure.med img{ max-height:55mm; width:auto; }
+figcaption{ font-size:7.6pt; color:var(--slate); margin-top:1mm; line-height:1.3; text-align:left; }
+figcaption b{ color:var(--navy-2); }
+.fig-star img{ box-shadow:0 0 0 2px var(--accent-2); }
+
+/* montaje de curvas de loss (3 en fila) */
+.montage{ display:flex; gap:3mm; align-items:flex-end; justify-content:center; }
+.montage img{ flex:1 1 0; min-width:0; max-height:50mm; width:auto; border:1px solid var(--line); border-radius:4px; }
+
+/* fila de dos figuras */
+.figrow{ display:flex; gap:4mm; align-items:center; }
+.figrow figure{ flex:1 1 0; min-width:0; margin:1.5mm 0; }
+.figrow figure img{ max-height:54mm; width:auto; }
+
+/* ---------- KPIs compactos ---------- */
+.kpis{ display:flex; gap:3mm; margin:2mm 0; page-break-inside:avoid; }
+.kpi{ flex:1; background:var(--navy); color:#fff; border-radius:7px; padding:2.5mm 2mm; text-align:center; }
+.kpi.alt{ background:var(--accent); } .kpi.gold{ background:linear-gradient(135deg,#b8902f,#d8b659); }
+.kpi .v{ font-family:"Georgia",serif; font-size:15pt; font-weight:bold; line-height:1; }
+.kpi .l{ font-size:6.8pt; letter-spacing:.03em; text-transform:uppercase; color:rgba(255,255,255,.88); margin-top:1.2mm; }
+
+/* ---------- TABLA ---------- */
+table.data{ width:100%; border-collapse:collapse; margin:2mm 0; font-size:8.4pt; page-break-inside:avoid; }
+table.data thead th{ background:var(--navy); color:#fff; padding:1.6mm 2.4mm; text-align:left; font-weight:600; font-size:8pt; }
+table.data tbody td{ padding:1.5mm 2.4mm; border-bottom:1px solid var(--line); }
+table.data tbody tr:nth-child(even){ background:var(--soft); }
+table.data tr.best{ background:#eaf6f6 !important; }
+table.data tr.best td{ font-weight:700; color:var(--navy); border-top:2px solid var(--accent); border-bottom:2px solid var(--accent); }
+table.data .star{ color:var(--accent-2); }
+
+.muted{ color:var(--slate); }
+.footer-note{ font-size:7.4pt; color:var(--slate); border-top:1px solid var(--line); padding-top:1.5mm; margin-top:3mm; text-align:left; }

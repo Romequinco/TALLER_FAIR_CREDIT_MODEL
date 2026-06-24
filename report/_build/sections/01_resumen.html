@@ -1,0 +1,27 @@
+<section>
+  <div class="section-head"><span class="num">★</span><h2>Resumen ejecutivo</h2><span class="tag">SÍNTESIS</span></div>
+
+  <p class="lead">Construimos un clasificador neuronal de riesgo de impago sobre Home Credit Default Risk y lo sometimos a tres exigencias simultáneas: que sea preciso, que no discrimine por género y que sepa decir cuándo no está seguro. El reto es que el modelo concede crédito a perfiles con poco historial, donde el sesgo y la falta de información se cuelan con facilidad.</p>
+
+  <div class="kpis">
+    <div class="kpi"><div class="v">−72%</div><div class="l">reducción del group gap (mejora)</div></div>
+    <div class="kpi alt"><div class="v">−0,59 pp</div><div class="l">coste en AUC por la justicia</div></div>
+    <div class="kpi"><div class="v">+47%</div><div class="l">varianza sin las 3 fuentes externas (n=27)</div></div>
+    <div class="kpi gold"><div class="v">0,7345</div><div class="l">AUC del modelo justo (test)</div></div>
+  </div>
+
+  <div class="callout good">
+    <span class="h">1 · La justicia es casi gratis aquí</span>
+    <p>Rebajar el group gap de 5,615 a 1,568 pp (−72 %) cuesta apenas −0,59 pp de AUC. En este modelo, equidad y rendimiento no se pelean: el sacrificio es marginal.</p>
+  </div>
+
+  <div class="callout key">
+    <span class="h">2 · El sesgo se cuela por EXT_SOURCE_1</span>
+    <p>Aunque el género nunca es una entrada del modelo, el sesgo aparece igual: <code>EXT_SOURCE_1</code> —la variable más predictiva— correlaciona −0,31 con el género y actúa de proxy. Borrar la variable sensible no elimina el problema.</p>
+  </div>
+
+  <div class="callout honest">
+    <span class="h">3 · El modelo duda donde falta información</span>
+    <p>La incertidumbre (MC-Dropout) no depende de si el cliente paga o no, sino de la calidad de los datos: la varianza de la predicción sube un 47 % en el grupo —pequeño— al que le faltan las tres fuentes externas. Aunque la relación global es débil, el modelo duda más justo donde la información es más pobre.</p>
+  </div>
+</section>

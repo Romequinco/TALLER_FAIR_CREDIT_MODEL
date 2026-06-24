@@ -1,0 +1,23 @@
+<section>
+  <div class="section-head">
+    <span class="num">7</span>
+    <h2>Resultados · Base vs mejor FAIR</h2>
+    <span class="tag">EVALUACIÓN EN TEST</span>
+  </div>
+
+  <p class="lead">La prueba final se hace en test, 46.127 registros que ningún modelo vio durante el entrenamiento ni el ajuste; la tabla E5 enfrenta la línea base a batir con el modelo FAIR de compromiso.</p>
+
+  <table class="data">
+    <thead>
+      <tr><th>Modelo</th><th>medida</th><th>λ</th><th>AUC test</th><th>group gap (pp)</th><th>ΔTPR (pp)</th><th>ΔFPR (pp)</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>base 03 (MLP sin FAIR)</td><td>—</td><td>—</td><td>0,7437</td><td>5,358</td><td>—</td><td>—</td></tr>
+      <tr><td>base tuner (λ=0, +capa custom)</td><td>—</td><td>0</td><td>0,7404</td><td>5,615</td><td>8,282</td><td>11,076</td></tr>
+      <tr class="best"><td><span class="star">★</span> mejor FAIR (corr², λ=5)</td><td>corr²</td><td>5</td><td>0,7345</td><td>1,568</td><td>1,817</td><td>3,349</td></tr>
+    </tbody>
+  </table>
+
+
+  <p>Frente a la base comparable del tuner (misma topología y mismo <code>class_weight</code>), activar la penalización FAIR recorta el group gap de 5,615 a 1,568 pp, un <strong>−72 %</strong>, a cambio de −0,59 pp de AUC. Contra la base 03 de la sección 2 el coste sube a −0,92 pp, igualmente pequeño. El equalized-odds baja en las dos patas (ΔTPR 8,28→1,82 pp, ΔFPR 11,08→3,35 pp), así que hombres y mujeres reciben tasas más parejas de acierto y de falsa alarma. El <strong>mejor FAIR (corr², λ=5)</strong> es el que gana en test: casi tan preciso como el mejor clasificador puro y bastante más justo.</p>
+</section>

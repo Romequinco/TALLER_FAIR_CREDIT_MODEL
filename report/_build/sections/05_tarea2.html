@@ -1,0 +1,24 @@
+<section>
+  <div class="section-head">
+    <span class="num">4</span>
+    <h2>Tarea 2: FAIR loss</h2>
+    <span class="tag">FAIR LOSS</span>
+  </div>
+
+  <p class="lead">Como borrar el género no quita el sesgo, penalizamos la dependencia estadística entre la predicción y el género durante el entrenamiento.</p>
+
+  <p>La idea cabe en una loss aumentada: <code>L = BCE(ŷ, TARGET) + λ·D(ŷ, CODE_GENDER)</code>. El primer término es la clasificación; el segundo, una medida de dependencia <code>D</code> entre la predicción y el género, pesada por <code>λ</code>. Ese <code>λ</code> funciona como multiplicador de Lagrange: con <code>λ=0</code> recuperamos la base, y al subirlo forzamos independencia a costa de precisión. Barrerlo traza la frontera de Pareto.</p>
+
+  <p><code>D</code> opera sobre la probabilidad post-sigmoide, no sobre el logit: queda acotada en [0,1] y es coherente con el group gap. El género solo se usa en entrenamiento, nunca como input: viaja empaquetado junto al target como <code>y_true = [TARGET, S]</code>, que la loss desempaqueta dentro. En inferencia desaparece.</p>
+
+  <p>Probamos tres medidas de dependencia:</p>
+  <ul class="clean">
+    <li><strong>corr²</strong>: correlación de Pearson al cuadrado. Con género binario capta el desplazamiento de medias entre grupos. Coste <code>O(n)</code>, solo momentos del batch.</li>
+    <li><strong>HSIC</strong>: dependencia de cualquier forma con kernels RBF, pero exige matrices <code>n×n</code> y con S binaria se diluye con el desbalance (registra ~0,02).</li>
+    <li><strong>MMD²</strong>: compara <code>P(ŷ|S=1)</code> contra <code>P(ŷ|S=0)</code> como problema de dos muestras; también opera sobre kernel <code>n×n</code>.</li>
+  </ul>
+
+  <p>Adoptamos <strong>corr²</strong> como penalización principal. Para un atributo binario la diferencia entre grupos es básicamente un desplazamiento de medias, que es justo lo que mueve el gap, y corr² lo recoge bien con coste lineal. HSIC y MMD necesitan matrices <code>n×n</code> inviables sobre los 46k registros de validación sin submuestrear. Un apunte de contexto: en el barrido aislado (NB05) ganó MMD con λ=10, mientras que en el integrado de la Tarea 3, con backbone fijo y <code>class_weight</code>, el compromiso fue <strong>corr² λ=5</strong>. Son experimentos distintos, así que la mejor medida cambia con ellos.</p>
+
+  <p class="nota">HSIC y MMD usan un ancho de banda σ fijo por defecto, sin la heurística de la mediana de distancias. No afecta al compromiso final, que es corr², pero afinar los kernels exigiría implementarla.</p>
+</section>
